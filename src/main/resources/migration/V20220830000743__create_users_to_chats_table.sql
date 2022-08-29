@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS users_to_chats(
+    id BIGSERIAL PRIMARY KEY,
+    user_id INT8 REFERENCES users(id),
+    chat_id INT8 REFERENCES chats(id)
+)
