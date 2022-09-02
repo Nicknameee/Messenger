@@ -18,6 +18,15 @@ public interface UserRepository extends JpaRepository<AbstractUserModel, Integer
     Long countAbstractUserModelsWithFollowingUsername(@Param("username") String username);
     @Modifying
     @Transactional
+    @Query("UPDATE AbstractUserModel u SET u.loginTime = current_timestamp WHERE u.username = :username")
+    void updateUserLoginTimeByUsername(@Param("username") String username);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE AbstractUserModel u SET u.logoutTime = current_timestamp WHERE u.username = :username")
+    void updateUserLogoutTimeByUsername(@Param("username") String username);
+    @Modifying
+    @Transactional
     @Query("DELETE FROM AbstractUserModel user WHERE user.id = :id")
     void deleteAbstractUserModelById(@Param("id") Integer id);
 }

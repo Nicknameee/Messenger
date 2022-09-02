@@ -171,4 +171,22 @@ public class UserDataAccessObject {
         Integer memberId = jdbcTemplate.queryForObject(query, Integer.class, chatId, userId);
         return memberId == null ? -1 : memberId;
     }
+
+    public void updateUserLoginTime(String username) throws InvalidAttributesException {
+        if (username == null || username.isEmpty()) {
+            throw new InvalidAttributesException(String.format("Username is invalid: %s", username),
+                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
+        userRepository.updateUserLoginTimeByUsername(username);
+    }
+
+    public void updateUserLogoutTime(String username) throws InvalidAttributesException {
+        if (username == null || username.isEmpty()) {
+            throw new InvalidAttributesException(String.format("Username is invalid: %s", username),
+                    Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                    LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
+        userRepository.updateUserLogoutTimeByUsername(username);
+    }
 }

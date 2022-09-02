@@ -131,4 +131,12 @@ public class UserService {
             userDataAccessObject.removeUserFromChat(userId, chatId);
         }
     }
+
+    public void updateUserLoginTime(String username) throws InvalidAttributesException {
+        userDataAccessObject.updateUserLoginTime(username);
+    }
+
+    public void updateUserLogoutTime(String username) throws InvalidAttributesException {
+        userDataAccessObject.updateUserLogoutTime(username);
+    }
 }
