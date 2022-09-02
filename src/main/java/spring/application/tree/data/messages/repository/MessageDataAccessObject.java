@@ -26,7 +26,7 @@ public class MessageDataAccessObject {
                                                  Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
-        final String query = "SELECT id, message, sent_at, author_id FROM messages WHERE chat_id = ?;";
+        final String query = "SELECT id, message, sent_at, author_id FROM messages WHERE chat_id = ? ORDER BY sent_at DESC;";
         List<AbstractMessageModel> messages = new ArrayList<>();
         jdbcTemplate.query(query, resultSet -> {
             int id = resultSet.getInt("id");
@@ -67,14 +67,14 @@ public class MessageDataAccessObject {
         jdbcTemplate.update(query, message, messageId);
     }
 
-    public void deleteMessage(int messageId, int chatId) throws InvalidAttributesException {
-        if (messageId <= 0 || chatId <= 0) {
-            throw new InvalidAttributesException(String.format("Message ID: %s or chat ID: %s is invalid", messageId, chatId),
+    public void deleteMessage(int messageId) throws InvalidAttributesException {
+        if (messageId <= 0) {
+            throw new InvalidAttributesException(String.format("Message ID is invalid: %s", messageId),
                                                  Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
-        final String query = "DELETE FROM messages WHERE id = ? AND chat_id = ?;";
-        jdbcTemplate.update(query, messageId, chatId);
+        final String query = "DELETE FROM messages WHERE id = ?;";
+        jdbcTemplate.update(query, messageId);
     }
 
     private String buildExceptionMessageForValidationOfMessageModel(AbstractMessageModel abstractMessageModel) {

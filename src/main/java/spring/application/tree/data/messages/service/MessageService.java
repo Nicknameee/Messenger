@@ -22,7 +22,13 @@ public class MessageService {
     private final MessageDataAccessObject messageDataAccessObject;
     private final ChatService chatService;
 
-    public List<AbstractMessageModel> getMessages(int chatId) throws InvalidAttributesException {
+    public List<AbstractMessageModel> getMessages(int chatId) throws InvalidAttributesException, NotAllowedException {
+        Integer currentUserId = UserService.getIdOfCurrentlyAuthenticatedUser();
+        if (currentUserId == null || !chatService.checkUserPresenceInChat(currentUserId, chatId)) {
+            throw new NotAllowedException(String.format("User with ID: %s is not participating chat with ID: %s, message reading is forbidden", currentUserId, chatId),
+                    Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                    LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
         return messageDataAccessObject.getMessages(chatId);
     }
 
@@ -50,13 +56,12 @@ public class MessageService {
 
     public void deleteMessage(AbstractMessageModel abstractMessageModel) throws InvalidAttributesException, NotAllowedException {
         int authorId = abstractMessageModel.getAuthorId();
-        int chatId = abstractMessageModel.getChatId();
         Integer currentUserId = UserService.getIdOfCurrentlyAuthenticatedUser();
         if (currentUserId == null || currentUserId != authorId) {
             throw new NotAllowedException(String.format("User with ID: %s is not author of this message, deletion is forbidden", authorId),
                                           Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                           LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
-        messageDataAccessObject.deleteMessage(abstractMessageModel.getId(), chatId);
+        messageDataAccessObject.deleteMessage(abstractMessageModel.getId());
     }
 }

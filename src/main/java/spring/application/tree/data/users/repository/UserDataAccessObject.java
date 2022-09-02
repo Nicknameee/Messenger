@@ -44,6 +44,7 @@ public class UserDataAccessObject {
             abstractUserModel.setRole(Role.valueOf(resultSet.getString("role")));
             abstractUserModel.setStatus(Status.valueOf(resultSet.getString("status")));
             abstractUserModel.setLanguage(Language.valueOf(resultSet.getString("language")));
+            members.add(abstractUserModel);
         }, chatId);
         return members;
     }

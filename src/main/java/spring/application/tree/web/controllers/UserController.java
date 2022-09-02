@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import spring.application.tree.data.chats.models.AbstractChatModel;
 import spring.application.tree.data.chats.service.ChatService;
@@ -20,6 +19,7 @@ import spring.application.tree.data.users.models.AbstractUserModel;
 import spring.application.tree.data.users.service.UserService;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,7 +87,7 @@ public class UserController {
 
     @PreAuthorize("hasAuthority('permission:user:read')")
     @GetMapping("/messages")
-    public ResponseEntity<Object> getMessages(@RequestParam("chat_id") int chatId) throws InvalidAttributesException {
+    public ResponseEntity<Object> getMessages(@RequestParam("chat_id") int chatId) throws InvalidAttributesException, NotAllowedException {
         List<AbstractMessageModel> messages = messageService.getMessages(chatId);
         return ResponseEntity.ok(messages);
     }
@@ -97,9 +97,8 @@ public class UserController {
     @MessageMapping("/message/create")
     @SendTo("/topic/chat")
     public ResponseEntity<Object> createMessage(@RequestBody AbstractMessageModel abstractMessageModel) throws InvalidAttributesException, NotAllowedException {
-        int messageId = messageService.addMessage(abstractMessageModel);
-        abstractMessageModel.setId(messageId);
-        return ResponseEntity.ok(abstractMessageModel);
+        messageService.addMessage(abstractMessageModel);
+        return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("hasAuthority('permission:user:update')")
@@ -112,14 +111,13 @@ public class UserController {
     }
 
     @PreAuthorize("hasAuthority('permission:user:delete')")
-    @PutMapping("/message/delete")
+    @DeleteMapping("/message/delete")
     @MessageMapping("/message/delete")
     @SendTo("/topic/chat")
     public ResponseEntity<Object> deleteMessage(@RequestBody AbstractMessageModel abstractMessageModel) throws InvalidAttributesException, NotAllowedException {
         messageService.deleteMessage(abstractMessageModel);
         Map<String, Object> response = new HashMap<>();
         response.put("message_id", abstractMessageModel.getId());
-        response.put("chat_id", abstractMessageModel.getChatId());
         response.put("deleted", true);
         return ResponseEntity.ok(response);
     }
