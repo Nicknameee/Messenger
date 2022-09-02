@@ -9,6 +9,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import spring.application.tree.data.exceptions.InvalidAttributesException;
 import spring.application.tree.data.messages.models.AbstractMessageModel;
+import spring.application.tree.data.users.service.UserService;
 
 import java.sql.PreparedStatement;
 import java.time.LocalDateTime;

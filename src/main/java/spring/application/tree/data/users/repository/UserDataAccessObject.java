@@ -14,9 +14,11 @@ import spring.application.tree.data.users.models.AbstractUserModel;
 import spring.application.tree.data.users.service.UserService;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @Repository
 @Slf4j
@@ -31,7 +33,7 @@ public class UserDataAccessObject {
                                                  Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
-        final String query = "SELECT u.id, u.username, u.email, u.login_time, u.logout_time, u.role, u.status, u.language " +
+        final String query = "SELECT u.id, u.username, u.email, u.login_time, u.logout_time, u.role, u.status, u.language, u.timezone " +
                              "FROM users u INNER JOIN users_to_chats utc ON u.id = utc.user_id WHERE utc.chat_id = ?;";
         List<AbstractUserModel> members = new ArrayList<>();
         jdbcTemplate.query(query, resultSet -> {
@@ -44,6 +46,7 @@ public class UserDataAccessObject {
             abstractUserModel.setRole(Role.valueOf(resultSet.getString("role")));
             abstractUserModel.setStatus(Status.valueOf(resultSet.getString("status")));
             abstractUserModel.setLanguage(Language.valueOf(resultSet.getString("language")));
+            abstractUserModel.setTimezone(resultSet.getString("timezone"));
             members.add(abstractUserModel);
         }, chatId);
         return members;
@@ -88,7 +91,8 @@ public class UserDataAccessObject {
     public void saveUser(AbstractUserModel abstractUserModel) throws ApplicationException {
         if (abstractUserModel.getUsername() == null || abstractUserModel.getUsername().isEmpty() ||
             abstractUserModel.getEmail() == null    || abstractUserModel.getEmail().isEmpty() ||
-            abstractUserModel.getPassword() == null || abstractUserModel.getPassword().isEmpty()) {
+            abstractUserModel.getPassword() == null || abstractUserModel.getPassword().isEmpty() ||
+            abstractUserModel.getTimezone() == null || abstractUserModel.getTimezone().isEmpty()) {
             throw new InvalidAttributesException(buildExceptionMessageForValidationOfUserModel(abstractUserModel),
                                                  Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
@@ -114,7 +118,10 @@ public class UserDataAccessObject {
             exceptionText.append(String.format("Email is invalid: %s ", abstractUserModel.getEmail()));
         }
         if (abstractUserModel.getPassword() == null || abstractUserModel.getPassword().isEmpty()) {
-            exceptionText.append(String.format("Password is invalid: %s", abstractUserModel.getPassword()));
+            exceptionText.append(String.format("Password is invalid: %s ", abstractUserModel.getPassword()));
+        }
+        if (abstractUserModel.getTimezone() == null || abstractUserModel.getTimezone().isEmpty() || !ZoneId.getAvailableZoneIds().contains(abstractUserModel.getTimezone())) {
+            exceptionText.append(String.format("Timezone is invalid: %s ", abstractUserModel.getTimezone()));
         }
         return exceptionText.toString();
     }

@@ -2,10 +2,11 @@ CREATE TABLE IF NOT EXISTS users(
     id BIGSERIAL PRIMARY KEY NOT NULL,
     username VARCHAR UNIQUE NOT NULL,
     email VARCHAR UNIQUE NOT NULL,
-    password VARCHAR,
-    login_time TIMESTAMPTZ,
-    logout_time TIMESTAMPTZ,
-    role VARCHAR,
-    status VARCHAR,
-    language VARCHAR
+    password VARCHAR NOT NULL,
+    login_time TIMESTAMPTZ NOT NULL,
+    logout_time TIMESTAMPTZ NOT NULL,
+    role VARCHAR NOT NULL,
+    status VARCHAR NOT NULL,
+    language VARCHAR NOT NULL,
+    timezone VARCHAR NOT NULL
 );

@@ -1,5 +1,6 @@
 package spring.application.tree.data.users.models;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import lombok.Data;
@@ -9,8 +10,11 @@ import spring.application.tree.data.users.attributes.Language;
 import spring.application.tree.data.users.attributes.Role;
 import spring.application.tree.data.users.attributes.Status;
 import spring.application.tree.data.users.security.DataEncoderTool;
+import spring.application.tree.data.users.service.UserService;
 
 import javax.persistence.*;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Date;
 
@@ -42,10 +46,28 @@ public class AbstractUserModel implements UserDetails {
     @Column(name = "language" , nullable = false)
     @Enumerated(EnumType.STRING)
     private Language language = Language.ENGLISH;
+    @Column(name = "timezone", nullable = false)
+    private String timezone;
 
     @JsonSetter("password")
-    public void setPassword(String password) {
+    private void setPassword(String password) {
         this.password = DataEncoderTool.encodeData(password);
+    }
+    @JsonGetter("loginTime")
+    private OffsetDateTime getLoginTime() {
+        AbstractUserModel abstractUserModel = UserService.getCurrentlyAuthenticatedUser();
+        if (abstractUserModel != null) {
+            return OffsetDateTime.ofInstant(loginTime.toInstant(), ZoneId.of(abstractUserModel.getTimezone()));
+        }
+        return OffsetDateTime.ofInstant(loginTime.toInstant(), ZoneId.systemDefault());
+    }
+    @JsonGetter("logoutTime")
+    private OffsetDateTime getLogoutTime() {
+        AbstractUserModel abstractUserModel = UserService.getCurrentlyAuthenticatedUser();
+        if (abstractUserModel != null) {
+            return OffsetDateTime.ofInstant(logoutTime.toInstant(), ZoneId.of(abstractUserModel.getTimezone()));
+        }
+        return OffsetDateTime.ofInstant(logoutTime.toInstant(), ZoneId.systemDefault());
     }
     @JsonIgnore
     @Override

@@ -3,7 +3,6 @@ package spring.application.tree.web.controllers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -11,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import spring.application.tree.data.exceptions.ApplicationException;
 import spring.application.tree.data.users.service.UserService;
 
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,5 +27,10 @@ public class UtilityController {
         response.put("email", userService.checkEmailAvailability(email));
         response.put("username", userService.checkUsernameAvailability(username));
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/timezone")
+    public ResponseEntity<Object> getAvailableTimezones() {
+        return ResponseEntity.ok(ZoneId.getAvailableZoneIds());
     }
 }
