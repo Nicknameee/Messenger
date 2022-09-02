@@ -13,17 +13,30 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.authentication.rememberme.AbstractRememberMeServices;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import spring.application.tree.data.users.security.UserDetailsImplementationService;
+import spring.application.tree.web.configuration.filters.PreAuthenticationFilter;
+import spring.application.tree.web.configuration.filters.PreLogoutFilter;
 import spring.application.tree.web.configuration.handlers.AuthenticationFailureSecurityHandler;
 import spring.application.tree.web.configuration.handlers.AuthenticationLogoutSecurityHandler;
 import spring.application.tree.web.configuration.handlers.AuthenticationSuccessSecurityHandler;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -37,9 +50,9 @@ public class ApplicationSecurityConfiguration extends WebSecurityConfigurerAdapt
 
     @Override
     public void configure(WebSecurity web) {
-        web
-                .ignoring()
-                .antMatchers("/static/**");
+//        web
+//                .ignoring()
+//                .antMatchers("/api/utility/**");
     }
 
     @Override
@@ -51,8 +64,13 @@ public class ApplicationSecurityConfiguration extends WebSecurityConfigurerAdapt
                 .maximumSessions(1)
                 .sessionRegistry(sessionRegistry());
         http
+                .addFilterBefore(new PreAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new PreLogoutFilter(), LogoutFilter.class);
+        http
                 .authorizeRequests()
-                .antMatchers(HttpMethod.POST , "/login", "/logout").permitAll()
+                .antMatchers("/api/user/account/create").permitAll()
+                .antMatchers("/api/utility/**").permitAll()
+                .antMatchers(HttpMethod.POST, "/login", "/logout").permitAll()
                 .anyRequest()
                 .authenticated()
                 .and()
@@ -63,10 +81,10 @@ public class ApplicationSecurityConfiguration extends WebSecurityConfigurerAdapt
                 .and()
                 .logout()
                 .logoutSuccessHandler(authenticationLogoutSecurityHandler)
-                .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "POST"))
+                .logoutRequestMatcher(new AntPathRequestMatcher("/logout", HttpMethod.POST.name()))
                 .invalidateHttpSession(true)
                 .clearAuthentication(true)
-                .deleteCookies("JSESSIONID" , AbstractRememberMeServices.SPRING_SECURITY_REMEMBER_ME_COOKIE_KEY);
+                .deleteCookies("JSESSIONID", AbstractRememberMeServices.SPRING_SECURITY_REMEMBER_ME_COOKIE_KEY);
     }
 
     @Bean
@@ -101,5 +119,25 @@ public class ApplicationSecurityConfiguration extends WebSecurityConfigurerAdapt
     @Bean
     public HttpSessionEventPublisher httpSessionEventPublisher() {
         return new HttpSessionEventPublisher();
+    }
+
+//    @PostConstruct
+    private void clearAuthentication() {
+        SessionRegistry sessionRegistry = new SessionRegistryImpl();
+        List<UserDetails> userDetails = sessionRegistry.getAllPrincipals().stream()
+                                                       .filter(principal -> principal instanceof UserDetails)
+                                                       .map(UserDetails.class::cast)
+                                                       .collect(Collectors.toList());
+        userDetails.forEach(details -> {
+                                        sessionRegistry.getAllSessions(details, true).forEach(sessionInformation -> {
+                                            sessionRegistry.removeSessionInformation(sessionInformation.getSessionId());
+                                            sessionInformation.expireNow();
+                                        });
+        });
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        if (securityContext != null) {
+            securityContext.setAuthentication(null);
+        }
+        SecurityContextHolder.clearContext();
     }
 }

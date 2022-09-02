@@ -1,19 +1,23 @@
 package spring.application.tree.data.users.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import lombok.Data;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import spring.application.tree.data.users.attributes.Language;
 import spring.application.tree.data.users.attributes.Role;
 import spring.application.tree.data.users.attributes.Status;
 import spring.application.tree.data.users.security.DataEncoderTool;
 
 import javax.persistence.*;
+import java.util.Collection;
 import java.util.Date;
 
 @Data
 @Table(name = "users")
 @Entity
-public class AbstractUserModel {
+public class AbstractUserModel implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -40,7 +44,36 @@ public class AbstractUserModel {
     private Language language = Language.ENGLISH;
 
     @JsonSetter("password")
-    private void setPassword(String password) {
+    public void setPassword(String password) {
         this.password = DataEncoderTool.encodeData(password);
+    }
+    @JsonIgnore
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return role.getAuthorities();
+    }
+
+    @JsonIgnore
+    @Override
+    public boolean isAccountNonExpired() {
+        return status == Status.ENABLED;
+    }
+
+    @JsonIgnore
+    @Override
+    public boolean isAccountNonLocked() {
+        return status == Status.ENABLED;
+    }
+
+    @JsonIgnore
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return status == Status.ENABLED;
+    }
+
+    @JsonIgnore
+    @Override
+    public boolean isEnabled() {
+        return status == Status.ENABLED;
     }
 }

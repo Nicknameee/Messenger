@@ -1,10 +1,12 @@
 package spring.application.tree.data.users.attributes;
 
+import lombok.Getter;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Getter
 public enum Role {
     ROLE_USER(Set.of(Permission.CREATE_USER, Permission.READ_USER, Permission.UPDATE_USER, Permission.DELETE_USER));
 

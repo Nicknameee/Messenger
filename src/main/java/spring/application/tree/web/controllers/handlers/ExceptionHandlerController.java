@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpClientErrorException;
 import spring.application.tree.data.exceptions.ApplicationException;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,9 @@ public class ExceptionHandlerController {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApplicationException> handleApplicationExceptions(Exception e) {
         HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+        if (e instanceof HttpClientErrorException) {
+            httpStatus = HttpStatus.CONFLICT;
+        }
         String exception = e.getMessage();
         String trace = Arrays.toString(e.getStackTrace());
         LocalDateTime exceptionTime = LocalDateTime.now();

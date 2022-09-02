@@ -29,6 +29,6 @@ public class UserDetailsImplementationService implements UserDetailsService {
         if (user == null) {
             throw new UsernameNotFoundException(String.format("No users were found by following username: %s", login));
         }
-        return UserSecurityConverter.convertUser(user);
+        return user;
     }
 }

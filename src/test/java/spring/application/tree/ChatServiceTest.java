@@ -4,12 +4,14 @@ package spring.application.tree;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import spring.application.tree.data.chats.service.ChatService;
 import spring.application.tree.data.exceptions.InvalidAttributesException;
 
 @SpringBootTest
+@Import(ApplicationTestConfiguration.class)
 @ContextConfiguration(initializers = ApplicationTestContextInitializer.class)
 @TestPropertySource(properties = "spring.config.location = classpath:application.properties")
 public class ChatServiceTest {

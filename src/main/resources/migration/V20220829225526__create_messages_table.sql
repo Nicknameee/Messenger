@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS messages(
-   id BIGSERIAL PRIMARY KEY,
+   id BIGSERIAL PRIMARY KEY NOT NULL,
    message VARCHAR,
    sent_at TIMESTAMPTZ,
    author_id INT8 REFERENCES users(id),

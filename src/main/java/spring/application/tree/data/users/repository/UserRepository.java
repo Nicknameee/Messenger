@@ -19,13 +19,5 @@ public interface UserRepository extends JpaRepository<AbstractUserModel, Integer
     @Modifying
     @Transactional
     @Query("DELETE FROM AbstractUserModel user WHERE user.id = :id")
-    void deleteAbstractUserModelById(@Param("id") Long id);
-    @Modifying
-    @Transactional
-    @Query("DELETE FROM AbstractUserModel user WHERE user.email = :email")
-    void deleteAbstractUserModelByEmail(@Param("email") String email);
-    @Modifying
-    @Transactional
-    @Query("DELETE FROM AbstractUserModel user WHERE user.username = :username")
-    void deleteAbstractUserModelByUsername(@Param("username") String username);
+    void deleteAbstractUserModelById(@Param("id") Integer id);
 }
