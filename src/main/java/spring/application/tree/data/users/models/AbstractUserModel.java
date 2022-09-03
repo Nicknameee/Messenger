@@ -42,7 +42,7 @@ public class AbstractUserModel implements UserDetails {
     private Role role = Role.ROLE_USER;
     @Column(name = "status" , nullable = false)
     @Enumerated(EnumType.STRING)
-    private Status status = Status.ENABLED;
+    private Status status = Status.DISABLED;
     @Column(name = "language" , nullable = false)
     @Enumerated(EnumType.STRING)
     private Language language = Language.ENGLISH;

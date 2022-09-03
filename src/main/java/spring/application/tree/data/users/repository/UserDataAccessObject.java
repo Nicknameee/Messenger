@@ -196,4 +196,13 @@ public class UserDataAccessObject {
         }
         userRepository.updateUserLogoutTimeByUsername(username);
     }
+
+    public void enableUser(String email) throws InvalidAttributesException {
+        if (email == null || email.isEmpty()) {
+            throw new InvalidAttributesException(String.format("Email is invalid: %s", email),
+                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
+        userRepository.enableUser(email);
+    }
 }

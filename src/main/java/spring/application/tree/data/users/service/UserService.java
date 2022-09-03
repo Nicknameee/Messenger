@@ -139,4 +139,8 @@ public class UserService {
     public void updateUserLogoutTime(String username) throws InvalidAttributesException {
         userDataAccessObject.updateUserLogoutTime(username);
     }
+
+    public void enableUser(String email) throws InvalidAttributesException {
+        userDataAccessObject.enableUser(email);
+    }
 }
