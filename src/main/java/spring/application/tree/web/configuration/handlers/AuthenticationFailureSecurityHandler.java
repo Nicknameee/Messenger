@@ -18,8 +18,8 @@ public class AuthenticationFailureSecurityHandler implements AuthenticationFailu
     public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException {
         ObjectMapper jacksonMapper = new ObjectMapper();
         Map<String, Object> responseBodyMap = new HashMap<>();
-        responseBodyMap.put("Authenticated", false);
-        responseBodyMap.put("Exception", exception.getMessage());
+        responseBodyMap.put("authenticated", false);
+        responseBodyMap.put("exception", exception.getMessage());
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         response.setStatus(HttpStatus.OK.value());

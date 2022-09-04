@@ -19,12 +19,12 @@ public class AuthenticationSuccessSecurityHandler implements AuthenticationSucce
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         ObjectMapper jacksonMapper = new ObjectMapper();
         Map<String, Object> responseBodyMap = new HashMap<>();
-        responseBodyMap.put("Authenticated", true);
+        responseBodyMap.put("authenticated", true);
         if (authentication != null) {
             Object principal = authentication.getPrincipal();
             if (principal instanceof UserDetails) {
                 String username = ((UserDetails) principal).getUsername();
-                responseBodyMap.put("User", username);
+                responseBodyMap.put("user", username);
             }
         }
         response.setContentType("application/json");

@@ -15,4 +15,12 @@ public class ApplicationException extends Exception {
     private String trace;
     private LocalDateTime errorTime;
     private HttpStatus httpStatus;
+
+    public ApplicationException(String exception, String trace, LocalDateTime errorTime, HttpStatus httpStatus) {
+        super(exception);
+        this.exception = exception;
+        this.trace = trace;
+        this.errorTime = errorTime;
+        this.httpStatus = httpStatus;
+    }
 }

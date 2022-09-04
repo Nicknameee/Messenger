@@ -25,8 +25,8 @@ public class PreLogoutFilter extends GenericFilterBean {
             HttpServletResponse response = (HttpServletResponse) servletResponse;
             ObjectMapper jacksonMapper = new ObjectMapper();
             Map<String, Object> responseBodyMap = new HashMap<>();
-            responseBodyMap.put("Authenticated", false);
-            responseBodyMap.put("Exception", "You are not authenticated");
+            responseBodyMap.put("authenticated", false);
+            responseBodyMap.put("exception", "You are not authenticated");
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             response.setStatus(HttpStatus.FORBIDDEN.value());

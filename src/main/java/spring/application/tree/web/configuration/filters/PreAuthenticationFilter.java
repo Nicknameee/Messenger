@@ -25,8 +25,8 @@ public class PreAuthenticationFilter extends GenericFilterBean {
             HttpServletResponse response = (HttpServletResponse) servletResponse;
             ObjectMapper jacksonMapper = new ObjectMapper();
             Map<String, Object> responseBodyMap = new HashMap<>();
-            responseBodyMap.put("Authenticated", true);
-            responseBodyMap.put("Exception", "You are already logged in");
+            responseBodyMap.put("authenticated", true);
+            responseBodyMap.put("exception", "You are already logged in");
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             response.setStatus(HttpStatus.CONFLICT.value());
