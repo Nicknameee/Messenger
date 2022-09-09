@@ -26,7 +26,6 @@ public class ScheduleService {
     @PostConstruct
     private void initializeSchedulers() {
         scheduledTasks = new ArrayList<>();
-        //@TODO: add default initializing of tasks from db
         utilScheduler = Executors.newScheduledThreadPool(8);
         Runnable clearingTask = () -> {
             scheduledTasks.removeIf(task -> task.isDone() || task.isCancelled());
@@ -90,7 +89,7 @@ public class ScheduleService {
 
     @PreDestroy
     private void saveScheduledTasksBefore() {
+        scheduledTasks.forEach(task -> task.cancel(true));
         scheduledTasks.clear();
-        //@TODO: save map values to db
     }
 }
