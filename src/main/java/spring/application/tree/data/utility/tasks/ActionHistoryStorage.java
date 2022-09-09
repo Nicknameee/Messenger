@@ -78,11 +78,14 @@ public class ActionHistoryStorage {
         return userToConfirmationCode.get(email).getKey();
     }*/
 
-    public static void markTaskAsCompleted(String email, String code, ActionType actionType) throws InvalidAttributesException, ConfirmationException {
+    public static boolean markTaskAsCompleted(String email, String code, ActionType actionType) throws InvalidAttributesException, ConfirmationException {
         if (email == null || email.isEmpty() || code == null || code.isEmpty()) {
             throw new InvalidAttributesException(String.format("Email: %s or confirmation code: %s is invalid", email, code),
                                                  Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
+        if (!userToConfirmationCode.containsKey(email)) {
+            return false;
         }
         String confirmationCode = userToConfirmationCode.get(email).getKey();
         if (code.equals(confirmationCode) && actionType == userToConfirmationCode.get(email).getValue()) {
@@ -93,5 +96,6 @@ public class ActionHistoryStorage {
                                             Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                             LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
+        return true;
     }
 }

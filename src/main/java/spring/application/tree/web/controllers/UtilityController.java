@@ -50,14 +50,18 @@ public class UtilityController {
     public ResponseEntity<Object> confirmTaskExecution(@PathVariable("code")   String code,
                                                        @PathVariable("email")  String email,
                                                        @PathVariable("action") String action) throws InvalidAttributesException, ConfirmationException {
-        ActionHistoryStorage.markTaskAsCompleted(email, code, ActionType.fromKey(action));
-        switch (ActionType.fromKey(action)) {
-            case SIGN_UP:
-                userService.enableUser(email);
-                break;
-        }
+        boolean isVerified = ActionHistoryStorage.markTaskAsCompleted(email, code, ActionType.fromKey(action));
         Map<String, Object> response = new HashMap<>();
-        response.put("verified", true);
+        if (isVerified) {
+            switch (ActionType.fromKey(action)) {
+                case SIGN_UP:
+                    userService.enableUser(email);
+                    break;
+            }
+            response.put("verified", true);
+        } else {
+            response.put("error", "Link is expired");
+        }
         return ResponseEntity.ok(response);
     }
 }

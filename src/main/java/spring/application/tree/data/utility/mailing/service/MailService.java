@@ -3,6 +3,7 @@ package spring.application.tree.data.utility.mailing.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -19,6 +20,8 @@ import spring.application.tree.data.utility.tasks.ActionHistoryStorage;
 import javax.annotation.PostConstruct;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
@@ -42,10 +45,30 @@ public class MailService {
     }
 
     public synchronized void sendMessage(AbstractMailMessageModel abstractMailMessageModel) throws ApplicationException {
+        if (abstractMailMessageModel.getRecipient() == null || abstractMailMessageModel.getRecipient().isEmpty() ||
+            abstractMailMessageModel.getMailType() == null  || abstractMailMessageModel.getActionType() == null) {
+            throw new InvalidAttributesException(buildExceptionMessageForValidationOfMessageModel(abstractMailMessageModel),
+                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
         AbstractMailMessageModel processedMailMessage = processMailMessageModelForSending(abstractMailMessageModel);
         if (processedMailMessage.getMailType() == MailType.HTML) {
             sendHtmlMailMessage(processedMailMessage);
         }
+    }
+
+    private String buildExceptionMessageForValidationOfMessageModel(AbstractMailMessageModel abstractMailMessageModel) {
+        StringBuilder exceptionMessage = new StringBuilder();
+        if (abstractMailMessageModel.getRecipient() == null || abstractMailMessageModel.getRecipient().isEmpty()) {
+            exceptionMessage.append(String.format("Invalid recipient email: %s", abstractMailMessageModel.getRecipient()));
+        }
+        if (abstractMailMessageModel.getMailType() == null) {
+            exceptionMessage.append(String.format("Invalid mail type: %s", abstractMailMessageModel.getMailType()));
+        }
+        if (abstractMailMessageModel.getActionType() == null) {
+            exceptionMessage.append(String.format("Invalid action type: %s", abstractMailMessageModel.getActionType()));
+        }
+        return exceptionMessage.toString();
     }
 
     @Deprecated
