@@ -50,9 +50,6 @@ public class ApplicationSecurityConfiguration extends WebSecurityConfigurerAdapt
 
     @Override
     public void configure(WebSecurity web) {
-//        web
-//                .ignoring()
-//                .antMatchers("/api/utility/**");
     }
 
     @Override
@@ -119,25 +116,5 @@ public class ApplicationSecurityConfiguration extends WebSecurityConfigurerAdapt
     @Bean
     public HttpSessionEventPublisher httpSessionEventPublisher() {
         return new HttpSessionEventPublisher();
-    }
-
-//    @PostConstruct
-    private void clearAuthentication() {
-        SessionRegistry sessionRegistry = new SessionRegistryImpl();
-        List<UserDetails> userDetails = sessionRegistry.getAllPrincipals().stream()
-                                                       .filter(principal -> principal instanceof UserDetails)
-                                                       .map(UserDetails.class::cast)
-                                                       .collect(Collectors.toList());
-        userDetails.forEach(details -> {
-                                        sessionRegistry.getAllSessions(details, true).forEach(sessionInformation -> {
-                                            sessionRegistry.removeSessionInformation(sessionInformation.getSessionId());
-                                            sessionInformation.expireNow();
-                                        });
-        });
-        SecurityContext securityContext = SecurityContextHolder.getContext();
-        if (securityContext != null) {
-            securityContext.setAuthentication(null);
-        }
-        SecurityContextHolder.clearContext();
     }
 }

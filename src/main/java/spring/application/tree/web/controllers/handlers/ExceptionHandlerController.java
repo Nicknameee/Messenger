@@ -14,25 +14,27 @@ import java.util.Arrays;
 public class ExceptionHandlerController {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApplicationException> handleApplicationExceptions(Exception e) {
-        HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
-        if (e instanceof HttpClientErrorException) {
-            httpStatus = HttpStatus.CONFLICT;
-        }
-        String exception = e.getMessage();
-        String trace = Arrays.toString(e.getStackTrace());
-        LocalDateTime exceptionTime = LocalDateTime.now();
+        HttpStatus httpStatus;
+        String exception;
+        String trace;
+        LocalDateTime exceptionTime;
         if (e instanceof ApplicationException) {
             httpStatus = ((ApplicationException) e).getHttpStatus();
             exception = ((ApplicationException) e).getException();
             trace = ((ApplicationException) e).getTrace();
             exceptionTime = ((ApplicationException) e).getErrorTime();
+        } else {
+            httpStatus = (e instanceof HttpClientErrorException) ? HttpStatus.CONFLICT : HttpStatus.INTERNAL_SERVER_ERROR;
+            exception = e.getMessage();
+            trace = Arrays.toString(e.getStackTrace());
+            exceptionTime = LocalDateTime.now();
         }
         ApplicationException applicationException = ApplicationException.builder()
-                .exception(exception)
-                .errorTime(exceptionTime)
-                .httpStatus(httpStatus)
-                .trace(trace)
-                .build();
+                                                                        .exception(exception)
+                                                                        .errorTime(exceptionTime)
+                                                                        .httpStatus(httpStatus)
+                                                                        .trace(trace)
+                                                                        .build();
         return ResponseEntity.status(applicationException.getHttpStatus()).body(applicationException);
     }
 }

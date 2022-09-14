@@ -19,7 +19,6 @@ import spring.application.tree.data.users.models.AbstractUserModel;
 import spring.application.tree.data.users.service.UserService;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +36,7 @@ public class UserController {
     @PostMapping("/account/create")
     public ResponseEntity<Object> createUser(@RequestBody AbstractUserModel abstractUserModel) throws ApplicationException {
         userService.saveUser(abstractUserModel);
-        return ResponseEntity.status(HttpStatus.OK).build();
+        return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("hasAuthority('permission:user:delete')")
@@ -97,8 +96,10 @@ public class UserController {
     @MessageMapping("/message/create")
     @SendTo("/topic/chat")
     public ResponseEntity<Object> createMessage(@RequestBody AbstractMessageModel abstractMessageModel) throws InvalidAttributesException, NotAllowedException {
-        messageService.addMessage(abstractMessageModel);
-        return ResponseEntity.ok().build();
+        int messageId = messageService.addMessage(abstractMessageModel);
+        Map<String, Object> response = new HashMap<>();
+        response.put("message_id", messageId);
+        return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasAuthority('permission:user:update')")
@@ -107,7 +108,7 @@ public class UserController {
     @SendTo("/topic/chat")
     public ResponseEntity<Object> updateMessage(@RequestBody AbstractMessageModel abstractMessageModel) throws InvalidAttributesException, NotAllowedException {
         messageService.updateMessage(abstractMessageModel);
-        return ResponseEntity.ok(abstractMessageModel);
+        return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("hasAuthority('permission:user:delete')")
@@ -116,9 +117,6 @@ public class UserController {
     @SendTo("/topic/chat")
     public ResponseEntity<Object> deleteMessage(@RequestBody AbstractMessageModel abstractMessageModel) throws InvalidAttributesException, NotAllowedException {
         messageService.deleteMessage(abstractMessageModel);
-        Map<String, Object> response = new HashMap<>();
-        response.put("message_id", abstractMessageModel.getId());
-        response.put("deleted", true);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok().build();
     }
 }
