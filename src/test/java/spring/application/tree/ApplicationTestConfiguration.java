@@ -13,6 +13,7 @@ import org.springframework.util.ClassUtils;
 
 import javax.sql.DataSource;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Objects;
 
 @TestConfiguration
 @PropertySource("classpath:application.properties")
@@ -29,16 +30,8 @@ public class ApplicationTestConfiguration {
     @Bean
     public JdbcTemplate jdbcTemplate() throws IllegalAccessException, InvocationTargetException, InstantiationException {
         Class<?> driverClass = ClassUtils.resolveClassName(driverClassName, this.getClass().getClassLoader());
-        Driver driver = (Driver) ClassUtils.getConstructorIfAvailable(driverClass).newInstance();
+        Driver driver = (Driver) Objects.requireNonNull(ClassUtils.getConstructorIfAvailable(driverClass)).newInstance();
         DataSource dataSource = new SimpleDriverDataSource(driver, url, username, password);
         return new JdbcTemplate(dataSource);
-    }
-
-    @Bean
-    public SimpleJdbcInsert simpleJdbcInsert() throws InvocationTargetException, InstantiationException, IllegalAccessException {
-        Class<?> driverClass = ClassUtils.resolveClassName(driverClassName, this.getClass().getClassLoader());
-        Driver driver = (Driver) ClassUtils.getConstructorIfAvailable(driverClass).newInstance();
-        DataSource dataSource = new SimpleDriverDataSource(driver, url, username, password);
-        return new SimpleJdbcInsert(dataSource);
     }
 }

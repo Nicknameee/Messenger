@@ -9,5 +9,5 @@ import org.springframework.test.context.TestPropertySource;
 @Import(ApplicationTestConfiguration.class)
 @ContextConfiguration(initializers = ApplicationTestContextInitializer.class)
 @TestPropertySource(properties = "spring.config.location = classpath:application.properties")
-public class UserServiceTest {
+public class ScheduleServiceTest {
 }
