@@ -13,6 +13,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -23,57 +24,56 @@ import org.springframework.security.web.authentication.rememberme.AbstractRememb
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import spring.application.tree.data.users.security.UserDetailsImplementationService;
-import spring.application.tree.web.configuration.filters.PreAuthenticationFilter;
-import spring.application.tree.web.configuration.filters.PreLogoutFilter;
-import spring.application.tree.web.configuration.handlers.AuthenticationFailureSecurityHandler;
-import spring.application.tree.web.configuration.handlers.AuthenticationLogoutSecurityHandler;
-import spring.application.tree.web.configuration.handlers.AuthenticationSuccessSecurityHandler;
+import spring.application.tree.web.configuration.handlers.AuthenticationLogoutTokenBasedSecurityHandler;
+import spring.application.tree.web.configuration.entries.AuthenticationTokenBasedEntryPoint;
+import spring.application.tree.web.configuration.filters.AuthorizationTokenRequestFilter;
+import spring.application.tree.web.configuration.filters.PreLogoutTokenBasedFilter;
 
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
 @RequiredArgsConstructor
-@Profile(value = "!token")
-public class ApplicationSecurityConfiguration extends WebSecurityConfigurerAdapter {
-    private final AuthenticationFailureSecurityHandler authenticationFailureSecurityHandler;
-    private final AuthenticationSuccessSecurityHandler authenticationSuccessSecurityHandler;
-    private final AuthenticationLogoutSecurityHandler authenticationLogoutSecurityHandler;
+@Profile(value = "token")
+public class ApplicationSecurityConfigurationTokenBased extends WebSecurityConfigurerAdapter {
+    private final AuthenticationTokenBasedEntryPoint authenticationTokenBasedEntryPoint;
+    private final AuthenticationLogoutTokenBasedSecurityHandler authenticationLogoutTokenBasedSecurityHandler;
     private final UserDetailsImplementationService userDetailsService;
-
-    @Override
-    public void configure(WebSecurity web) {
-    }
+    private final AuthorizationTokenRequestFilter authorizationTokenRequestFilter;
+    private final PreLogoutTokenBasedFilter preLogoutTokenBasedFilter;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
-                .csrf().disable();
+                .csrf().disable()
+                .httpBasic().disable()
+                .formLogin().disable();
         http
                 .sessionManagement()
-                .maximumSessions(1)
-                .sessionRegistry(sessionRegistry());
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         http
-                .addFilterBefore(new PreAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(new PreLogoutFilter(), LogoutFilter.class);
+                .addFilterBefore(authorizationTokenRequestFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(preLogoutTokenBasedFilter, LogoutFilter.class);
         http
                 .authorizeRequests()
-                .antMatchers("/api/user/account/create").permitAll()
+                .antMatchers(HttpMethod.POST, "/api/user/account/create").permitAll()
                 .antMatchers("/api/utility/**").permitAll()
                 .antMatchers(HttpMethod.POST, "/login", "/logout").permitAll()
                 .anyRequest()
                 .authenticated()
                 .and()
-                .formLogin()
-                .loginProcessingUrl("/login")
-                .successHandler(authenticationSuccessSecurityHandler)
-                .failureHandler(authenticationFailureSecurityHandler)
-                .and()
                 .logout()
-                .logoutSuccessHandler(authenticationLogoutSecurityHandler)
+                .logoutSuccessHandler(authenticationLogoutTokenBasedSecurityHandler)
                 .logoutRequestMatcher(new AntPathRequestMatcher("/logout", HttpMethod.POST.name()))
                 .invalidateHttpSession(true)
                 .clearAuthentication(true)
                 .deleteCookies("JSESSIONID", AbstractRememberMeServices.SPRING_SECURITY_REMEMBER_ME_COOKIE_KEY);
+        http
+                .exceptionHandling()
+                .authenticationEntryPoint(authenticationTokenBasedEntryPoint);
+    }
+
+    @Override
+    public void configure(WebSecurity web) {
     }
 
     @Bean
