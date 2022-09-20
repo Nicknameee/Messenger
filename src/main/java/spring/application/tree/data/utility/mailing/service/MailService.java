@@ -10,11 +10,8 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import spring.application.tree.data.exceptions.ApplicationException;
 import spring.application.tree.data.exceptions.InvalidAttributesException;
-import spring.application.tree.data.scheduling.service.ScheduleService;
 import spring.application.tree.data.utility.mailing.models.AbstractMailMessageModel;
-import spring.application.tree.data.utility.mailing.models.ActionType;
 import spring.application.tree.data.utility.mailing.models.MailType;
-import spring.application.tree.data.utility.models.PairValue;
 import spring.application.tree.data.utility.properties.CustomPropertyDataLoader;
 import spring.application.tree.data.utility.properties.CustomPropertySourceConverter;
 import spring.application.tree.data.utility.tasks.ActionHistoryStorage;
@@ -23,31 +20,26 @@ import javax.annotation.PostConstruct;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
+@Slf4j
 public class MailService {
     @Value("${spring.mail.username}")
     private String sender;
-    private Map<String, String> properties;
+    public static Map<String, String> properties;
     private final JavaMailSender javaMailSender;
-    private final ScheduleService scheduleService;
-    /**
-     * Key - user email, value - action type and cancel task
-     */
-    private static final Map<String, PairValue<ActionType, ScheduledFuture<?>>> userToCancellationTask = new HashMap<>();
 
     @PostConstruct
     private void initializeProperties() {
         properties = CustomPropertySourceConverter.convertToKeyValueFormat(CustomPropertyDataLoader.getResourceContent("classpath:mail.properties"));
     }
 
-    public synchronized void sendMessage(AbstractMailMessageModel abstractMailMessageModel) throws ApplicationException {
+    public synchronized Runnable sendMessage(AbstractMailMessageModel abstractMailMessageModel) throws ApplicationException {
         if (abstractMailMessageModel.getRecipient() == null || abstractMailMessageModel.getRecipient().isEmpty() ||
             abstractMailMessageModel.getMailType() == null  || abstractMailMessageModel.getActionType() == null) {
             throw new InvalidAttributesException(buildExceptionMessageForValidationOfMessageModel(abstractMailMessageModel),
@@ -56,8 +48,9 @@ public class MailService {
         }
         AbstractMailMessageModel processedMailMessage = processMailMessageModelForSending(abstractMailMessageModel);
         if (processedMailMessage.getMailType() == MailType.HTML) {
-            sendHtmlMailMessage(processedMailMessage);
+            return sendHtmlMailMessage(processedMailMessage);
         }
+        return null;
     }
 
     private String buildExceptionMessageForValidationOfMessageModel(AbstractMailMessageModel abstractMailMessageModel) {
@@ -75,7 +68,7 @@ public class MailService {
     }
 
     @Deprecated
-    private void sendMailMessage(AbstractMailMessageModel abstractMailMessageModel) throws InvalidAttributesException {
+    private Runnable sendMailMessage(AbstractMailMessageModel abstractMailMessageModel) throws InvalidAttributesException {
         Runnable task = () -> {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(sender);
@@ -86,28 +79,10 @@ public class MailService {
             javaMailSender.send(message);
             log.info(String.format("Sending email to: %s", abstractMailMessageModel.getRecipient()));
         };
-        ScheduledFuture<?> scheduledTask = scheduleService.scheduleOnceFireTask(task, 0, TimeUnit.SECONDS);
-        ActionHistoryStorage.putConfirmationTask(abstractMailMessageModel.getRecipient(), scheduledTask);
-        synchronized (userToCancellationTask) {
-            if (userToCancellationTask.containsKey(abstractMailMessageModel.getRecipient()) &&
-                userToCancellationTask.get(abstractMailMessageModel.getRecipient()).getKey() == abstractMailMessageModel.getActionType()) {
-                userToCancellationTask.get(abstractMailMessageModel.getRecipient()).getValue().cancel(true);
-                userToCancellationTask.remove(abstractMailMessageModel.getRecipient());
-            }
-        }
-        Runnable invalidateConfirmationTask = () -> {
-            try {
-                ActionHistoryStorage.removeConfirmationCode(abstractMailMessageModel.getRecipient());
-                ActionHistoryStorage.removeConfirmationTask(abstractMailMessageModel.getRecipient());
-            } catch (InvalidAttributesException e) {
-                log.error(String.format("Error occurs while invalidation of confirmation task, email: %s", abstractMailMessageModel.getRecipient()));
-            }
-        };
-        ScheduledFuture<?> cancelTask = scheduleService.scheduleOnceFireTask(invalidateConfirmationTask, Integer.parseInt(properties.get("duration")), TimeUnit.SECONDS);
-        userToCancellationTask.put(abstractMailMessageModel.getRecipient(), new PairValue<>(abstractMailMessageModel.getActionType(), cancelTask));
+        return task;
     }
 
-    private void sendHtmlMailMessage(AbstractMailMessageModel abstractMailMessageModel) throws InvalidAttributesException {
+    private Runnable sendHtmlMailMessage(AbstractMailMessageModel abstractMailMessageModel) throws InvalidAttributesException {
         Runnable task = () -> {
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
@@ -127,34 +102,16 @@ public class MailService {
                     log.error(String.format("Error occurs when trying to remove confirmation code on fail email sending, recipient: %s",
                                              abstractMailMessageModel.getRecipient()));
                 }
-                synchronized (userToCancellationTask) {
-                    if (userToCancellationTask.containsKey(abstractMailMessageModel.getRecipient()) &&
-                        userToCancellationTask.get(abstractMailMessageModel.getRecipient()).getKey() == abstractMailMessageModel.getActionType()) {
-                        userToCancellationTask.get(abstractMailMessageModel.getRecipient()).getValue().cancel(true);
-                        userToCancellationTask.remove(abstractMailMessageModel.getRecipient());
+                synchronized (MailUtility.userToCancellationTask) {
+                    if (MailUtility.userToCancellationTask.containsKey(abstractMailMessageModel.getRecipient()) &&
+                        MailUtility.userToCancellationTask.get(abstractMailMessageModel.getRecipient()).getKey() == abstractMailMessageModel.getActionType()) {
+                        MailUtility.userToCancellationTask.get(abstractMailMessageModel.getRecipient()).getValue().cancel(true);
+                        MailUtility.userToCancellationTask.remove(abstractMailMessageModel.getRecipient());
                     }
                 }
             }
         };
-        ScheduledFuture<?> scheduledTask = scheduleService.scheduleOnceFireTask(task, 0, TimeUnit.SECONDS);
-        ActionHistoryStorage.putConfirmationTask(abstractMailMessageModel.getRecipient(), scheduledTask);
-        synchronized (userToCancellationTask) {
-            if (userToCancellationTask.containsKey(abstractMailMessageModel.getRecipient()) &&
-                userToCancellationTask.get(abstractMailMessageModel.getRecipient()).getKey() == abstractMailMessageModel.getActionType()) {
-                userToCancellationTask.get(abstractMailMessageModel.getRecipient()).getValue().cancel(true);
-                userToCancellationTask.remove(abstractMailMessageModel.getRecipient());
-            }
-        }
-        Runnable invalidateConfirmationTask = () -> {
-            try {
-                ActionHistoryStorage.removeConfirmationCode(abstractMailMessageModel.getRecipient());
-                ActionHistoryStorage.removeConfirmationTask(abstractMailMessageModel.getRecipient());
-            } catch (InvalidAttributesException e) {
-                log.error(String.format("Error occurs while invalidation of confirmation task, email: %s", abstractMailMessageModel.getRecipient()));
-            }
-        };
-        ScheduledFuture<?> cancelTask = scheduleService.scheduleOnceFireTask(invalidateConfirmationTask, Integer.parseInt(properties.get("duration")), TimeUnit.SECONDS);
-        userToCancellationTask.put(abstractMailMessageModel.getRecipient(), new PairValue<>(abstractMailMessageModel.getActionType(), cancelTask));
+        return task;
     }
 
     private String generateUniqueCode() {
@@ -186,6 +143,5 @@ public class MailService {
         processedAbstractMailMessageModel.setMailType(abstractMailMessageModel.getMailType());
         processedAbstractMailMessageModel.setActionType(abstractMailMessageModel.getActionType());
         return processedAbstractMailMessageModel;
-
     }
 }

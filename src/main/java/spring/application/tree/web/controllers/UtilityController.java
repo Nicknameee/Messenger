@@ -12,6 +12,7 @@ import spring.application.tree.data.users.service.UserService;
 import spring.application.tree.data.utility.mailing.models.AbstractMailMessageModel;
 import spring.application.tree.data.utility.mailing.models.ActionType;
 import spring.application.tree.data.utility.mailing.service.MailService;
+import spring.application.tree.data.utility.mailing.service.MailUtility;
 import spring.application.tree.data.utility.tasks.ActionHistoryStorage;
 
 import java.net.URI;
@@ -26,6 +27,7 @@ import java.util.Map;
 public class UtilityController {
     private final UserService userService;
     private final MailService mailService;
+    private final MailUtility mailUtility;
 
     @GetMapping("/credentials/availability")
     public ResponseEntity<Object> checkCredentialsAvailability(@RequestParam("email") String email,
@@ -41,9 +43,9 @@ public class UtilityController {
         return ResponseEntity.ok(ZoneId.getAvailableZoneIds());
     }
 
-    @PostMapping("/mail/send")
+    @PostMapping("/mail/confirm/send")
     public ResponseEntity<Object> createMessageSendingTask(@RequestBody AbstractMailMessageModel abstractMailMessageModel) throws ApplicationException {
-        mailService.sendMessage(abstractMailMessageModel);
+        mailUtility.sendConfirmationEmailMessage(abstractMailMessageModel);
         return ResponseEntity.ok().build();
     }
 
