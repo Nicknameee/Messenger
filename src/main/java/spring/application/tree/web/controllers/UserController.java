@@ -2,7 +2,6 @@ package spring.application.tree.web.controllers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
@@ -117,6 +116,37 @@ public class UserController {
     @SendTo("/topic/chat")
     public ResponseEntity<Object> deleteMessage(@RequestBody AbstractMessageModel abstractMessageModel) throws InvalidAttributesException, NotAllowedException {
         messageService.deleteMessage(abstractMessageModel);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasAuthority('permission:user:read')")
+    @PostMapping("/chat/join")
+    public ResponseEntity<Object> joinChat(@RequestParam("chat_id") int chatId,
+                                           @RequestParam(required = false) String password) throws InvalidAttributesException, NotAllowedException {
+        userService.joinChat(chatId, password);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasAuthority('permission:user:read')")
+    @PostMapping("/chat/exit")
+    public ResponseEntity<Object> exitChat(@RequestParam("chat_id") int chatId) throws InvalidAttributesException, NotAllowedException {
+        userService.exitChat(chatId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasAuthority('permission:user:update')")
+    @PostMapping("/chat/member/add")
+    public ResponseEntity<Object> addUserToChat(@RequestParam("user_id") int userId,
+                                                @RequestParam("chat_id") int chatId) throws InvalidAttributesException, NotAllowedException {
+        userService.addUserToChat(userId, chatId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasAuthority('permission:user:update')")
+    @PostMapping("/chat/member/remove")
+    public ResponseEntity<Object> removeUserFromChat(@RequestParam("user_id") int userId,
+                                                     @RequestParam("chat_id") int chatId) throws InvalidAttributesException, NotAllowedException {
+        userService.removerUserFromChat(userId, chatId);
         return ResponseEntity.ok().build();
     }
 }

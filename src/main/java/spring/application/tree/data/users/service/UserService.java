@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import spring.application.tree.data.chats.service.ChatService;
 import spring.application.tree.data.exceptions.ApplicationException;
-import spring.application.tree.data.exceptions.CredentialsException;
 import spring.application.tree.data.exceptions.InvalidAttributesException;
 import spring.application.tree.data.exceptions.NotAllowedException;
 import spring.application.tree.data.users.models.AbstractUserModel;
@@ -69,9 +68,9 @@ public class UserService {
 
     public void saveUser(AbstractUserModel abstractUserModel) throws ApplicationException {
         if (!checkUserCredentialsAvailable(abstractUserModel.getEmail(), abstractUserModel.getUsername())) {
-            throw new CredentialsException(String.format("Credentials are taken, email: %s, username: %s", abstractUserModel.getEmail(), abstractUserModel.getUsername()),
-                                           Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
-                                           LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+            throw new NotAllowedException(String.format("Credentials are taken, email: %s, username: %s", abstractUserModel.getEmail(), abstractUserModel.getUsername()),
+                                          Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                          LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
         userDataAccessObject.saveUser(abstractUserModel);
     }
@@ -99,7 +98,7 @@ public class UserService {
         if (ownedChatsCount > 0) {
             List<Integer> chatIds = chatService.getChatIdsOwnedByUser(userId);
             for (Integer chatId : chatIds) {
-                exitFromChat(chatId);
+                userDataAccessObject.removeUserFromChat(userId, chatId);
                 int chatMembersCount = userDataAccessObject.countChatMembers(chatId);
                 if (chatMembersCount > 0) {
                     int memberId = userDataAccessObject.getRandomChatSimpleMemberId(chatId, userId);
@@ -111,24 +110,54 @@ public class UserService {
         }
     }
 
-    public void addUserToChat(int userId, int chatId) throws InvalidAttributesException {
+    public void addUserToChat(int userId, int chatId) throws InvalidAttributesException, NotAllowedException {
+        Integer currentUserId = getIdOfCurrentlyAuthenticatedUser();
+        if (currentUserId == null || !chatService.getChatIdsOwnedByUser(currentUserId).contains(chatId)) {
+            throw new NotAllowedException(String.format("Member adding declined, only author of chat able to do that", chatId),
+                                          Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                          LocalDateTime.now(), HttpStatus.FORBIDDEN);
+        }
         userDataAccessObject.addUserToChat(userId, chatId);
     }
 
-    public void removerUserFromChat(int userId, int chatId) throws InvalidAttributesException {
-        userDataAccessObject.removeUserFromChat(userId, chatId);
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+    public void removerUserFromChat(int userId, int chatId) throws InvalidAttributesException, NotAllowedException {
+        Integer currentUserId = getIdOfCurrentlyAuthenticatedUser();
+        if (currentUserId == null || !chatService.getChatIdsOwnedByUser(currentUserId).contains(chatId)) {
+            throw new NotAllowedException(String.format("Member removing declined, only author of chat able to do that", chatId),
+                                          Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                          LocalDateTime.now(), HttpStatus.FORBIDDEN);
+        }
+        if (currentUserId == userId) {
+            processChatsOnAuthorAccountDeletion(userId);
+        } else {
+            userDataAccessObject.removeUserFromChat(userId, chatId);
+        }
     }
 
-    public void joinChat(int chatId) throws InvalidAttributesException {
+    public void joinChat(int chatId, String password) throws InvalidAttributesException, NotAllowedException {
         Integer userId = getIdOfCurrentlyAuthenticatedUser();
         if (userId != null) {
+            String chatPassword = chatService.getChatPassword(chatId);
+            boolean joiningAllowed = chatPassword == null || (chatPassword.equals(password));
+            if (!joiningAllowed) {
+                throw new NotAllowedException(String.format("Joining declined, chat is secured, password does not match, chat ID: %s", chatId),
+                                              Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                              LocalDateTime.now(), HttpStatus.FORBIDDEN);
+            }
             userDataAccessObject.addUserToChat(userId, chatId);
         }
     }
-    public void exitFromChat(int chatId) throws InvalidAttributesException {
+
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+    public void exitChat(int chatId) throws InvalidAttributesException, NotAllowedException {
         Integer userId = getIdOfCurrentlyAuthenticatedUser();
         if (userId != null) {
-            userDataAccessObject.removeUserFromChat(userId, chatId);
+            if (chatService.getChatIdsOwnedByUser(userId).contains(chatId)) {
+                processChatsOnAuthorAccountDeletion(userId);
+            } else {
+                userDataAccessObject.removeUserFromChat(userId, chatId);
+            }
         }
     }
 

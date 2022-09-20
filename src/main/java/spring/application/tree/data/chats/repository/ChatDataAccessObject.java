@@ -149,4 +149,14 @@ public class ChatDataAccessObject {
         Integer count = jdbcTemplate.queryForObject(query, Integer.class, userId, chatId);
         return (count == null ? 0 : count) == 1;
     }
+
+    public String getChatPassword(int chatId) throws InvalidAttributesException {
+        if (chatId <= 0) {
+            throw new InvalidAttributesException(String.format("Chat ID: %s is invalid", chatId),
+                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
+        final String query = "SELECT password FROM chats WHERE id = ?";
+        return jdbcTemplate.queryForObject(query, String.class, chatId);
+    }
 }

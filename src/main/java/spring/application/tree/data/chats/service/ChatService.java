@@ -79,4 +79,8 @@ public class ChatService {
     public boolean checkUserPresenceInChat(int userId, int chatId) throws InvalidAttributesException {
         return chatDataAccessObject.checkUserPresenceInChat(userId, chatId);
     }
+
+    public String getChatPassword(int chatId) throws InvalidAttributesException {
+        return chatDataAccessObject.getChatPassword(chatId);
+    }
 }
