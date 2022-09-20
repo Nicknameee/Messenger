@@ -16,6 +16,8 @@ import spring.application.tree.data.users.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +29,7 @@ public class AuthenticationProcessingService {
     private final AuthorizationTokenUtility authorizationTokenUtility;
     private final UserService userService;
 
-    public String authenticateUserWithTokenBasedAuthorizationStrategy(String username, String password) throws SecurityException {
+    public Map<String, Object> authenticateUserWithTokenBasedAuthorizationStrategy(String username, String password) throws SecurityException {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
         String token;
         if (authentication.isAuthenticated()) {
@@ -43,6 +45,9 @@ public class AuthenticationProcessingService {
         } catch (InvalidAttributesException e) {
             log.error(String.format("Exception while login time updating for user: %s", username));
         }
-        return token;
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", token);
+        response.put("expires_at", authorizationTokenUtility.getExpirationDateFromToken(token).getTime());
+        return response;
     }
 }

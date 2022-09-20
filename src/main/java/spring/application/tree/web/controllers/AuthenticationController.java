@@ -9,9 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 import spring.application.tree.data.exceptions.SecurityException;
 import spring.application.tree.data.users.security.token.AuthenticationProcessingService;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @RestController
 @RequiredArgsConstructor
 @Profile(value = "token")
@@ -21,8 +18,6 @@ public class AuthenticationController {
     @PostMapping("/login")
     public ResponseEntity<Object> loginUser(@RequestParam("username") String username,
                                             @RequestParam("password") String password) throws SecurityException {
-        Map<String, Object> response = new HashMap<>();
-        response.put("token", authenticationProcessingService.authenticateUserWithTokenBasedAuthorizationStrategy(username, password));
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(authenticationProcessingService.authenticateUserWithTokenBasedAuthorizationStrategy(username, password));
     }
 }

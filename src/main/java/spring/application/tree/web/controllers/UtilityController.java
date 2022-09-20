@@ -14,6 +14,7 @@ import spring.application.tree.data.utility.mailing.models.ActionType;
 import spring.application.tree.data.utility.mailing.service.MailService;
 import spring.application.tree.data.utility.tasks.ActionHistoryStorage;
 
+import java.net.URI;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
@@ -51,14 +52,17 @@ public class UtilityController {
                                                        @PathVariable("email")  String email,
                                                        @PathVariable("action") String action) throws InvalidAttributesException, ConfirmationException {
         boolean isVerified = ActionHistoryStorage.markTaskAsCompleted(email, code, ActionType.fromKey(action));
-        HttpStatus httpStatus = isVerified ? HttpStatus.OK : HttpStatus.NOT_ACCEPTABLE;
+        ResponseEntity<Object> response;
         if (isVerified) {
             switch (ActionType.fromKey(action)) {
                 case SIGN_UP:
                     userService.enableUser(email);
                     break;
             }
+            response = ResponseEntity.status(HttpStatus.FOUND).location(URI.create("http://localhost:9000")).build();
+        } else {
+            response = ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
         }
-        return ResponseEntity.status(httpStatus).build();
+        return response;
     }
 }

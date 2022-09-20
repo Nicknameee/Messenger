@@ -42,14 +42,14 @@ public class ActionHistoryStorage {
         userToConfirmationCode.put(email, new PairValue<>(code, actionType));
     }
 
-    /*public static void removeConfirmationTask(String email) throws InvalidAttributesException {
+    public static void removeConfirmationTask(String email) throws InvalidAttributesException {
         if (email == null || email.isEmpty()) {
             throw new InvalidAttributesException(String.format("Email is invalid: %s", email),
                                                  Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
         userToConfirmationTask.remove(email);
-    }*/
+    }
 
     public static void removeConfirmationCode(String email) throws InvalidAttributesException {
         if (email == null || email.isEmpty()) {
@@ -60,7 +60,7 @@ public class ActionHistoryStorage {
         userToConfirmationCode.remove(email);
     }
 
-    /*public static ScheduledFuture<?> getConfirmationTask(String email) throws InvalidAttributesException {
+    public static ScheduledFuture<?> getConfirmationTask(String email) throws InvalidAttributesException {
         if (email == null || email.isEmpty()) {
             throw new InvalidAttributesException(String.format("Email is invalid: %s", email),
                                                  Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
@@ -76,7 +76,7 @@ public class ActionHistoryStorage {
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
         return userToConfirmationCode.get(email).getKey();
-    }*/
+    }
 
     public static boolean markTaskAsCompleted(String email, String code, ActionType actionType) throws InvalidAttributesException, ConfirmationException {
         if (email == null || email.isEmpty() || code == null || code.isEmpty()) {
