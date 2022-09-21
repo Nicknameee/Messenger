@@ -11,14 +11,13 @@ import spring.application.tree.data.users.attributes.Language;
 import spring.application.tree.data.users.attributes.Role;
 import spring.application.tree.data.users.attributes.Status;
 import spring.application.tree.data.users.models.AbstractUserModel;
-import spring.application.tree.data.users.service.UserService;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 
 @Repository
 @Slf4j
@@ -61,6 +60,16 @@ public class UserDataAccessObject {
         return userRepository.findUserByLogin(login);
     }
 
+    public AbstractUserModel getUserById(Integer id) throws InvalidAttributesException {
+        if (id == null || id <= 0) {
+            throw new InvalidAttributesException(String.format("User ID is invalid: %s", id),
+                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
+        Optional<AbstractUserModel> abstractUserModelOptional =  userRepository.findById(id);
+        return abstractUserModelOptional.orElse(null);
+    }
+
     public boolean checkUsernameAvailability(String username) throws ApplicationException {
         if (username == null || username.isEmpty()) {
             throw new InvalidAttributesException(String.format("Username is invalid: %s", username),
@@ -89,14 +98,12 @@ public class UserDataAccessObject {
     }
 
     public void saveUser(AbstractUserModel abstractUserModel) throws ApplicationException {
-        if (abstractUserModel.getUsername() == null || abstractUserModel.getUsername().isEmpty() ||
-            abstractUserModel.getEmail() == null    || abstractUserModel.getEmail().isEmpty() ||
-            abstractUserModel.getPassword() == null || abstractUserModel.getPassword().isEmpty() ||
-            abstractUserModel.getTimezone() == null || abstractUserModel.getTimezone().isEmpty()) {
-            throw new InvalidAttributesException(buildExceptionMessageForValidationOfUserModel(abstractUserModel),
-                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
-                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
-        }
+        validateUserModel(abstractUserModel);
+        userRepository.save(abstractUserModel);
+    }
+
+    public void updateUser(AbstractUserModel abstractUserModel) throws InvalidAttributesException {
+        validateUserModel(abstractUserModel);
         userRepository.save(abstractUserModel);
     }
 
@@ -111,7 +118,7 @@ public class UserDataAccessObject {
         userRepository.deleteAbstractUserModelById(id);
     }
 
-    private String buildExceptionMessageForValidationOfUserModel(AbstractUserModel abstractUserModel) {
+    private void validateUserModel(AbstractUserModel abstractUserModel) throws InvalidAttributesException {
         StringBuilder exceptionText = new StringBuilder();
         if (abstractUserModel.getUsername() == null || abstractUserModel.getUsername().isEmpty()) {
             exceptionText.append(String.format("Username is invalid: %s ", abstractUserModel.getUsername()));
@@ -125,7 +132,11 @@ public class UserDataAccessObject {
         if (abstractUserModel.getTimezone() == null || abstractUserModel.getTimezone().isEmpty() || !ZoneId.getAvailableZoneIds().contains(abstractUserModel.getTimezone())) {
             exceptionText.append(String.format("Timezone is invalid: %s ", abstractUserModel.getTimezone()));
         }
-        return exceptionText.toString();
+        if (!exceptionText.toString().isEmpty()) {
+            throw new InvalidAttributesException(exceptionText.toString(),
+                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
     }
 
     public void addUserToChat(int userId, int chatId) throws InvalidAttributesException {

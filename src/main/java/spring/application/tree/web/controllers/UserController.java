@@ -38,6 +38,13 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasAnyAuthority('permission:user:update')")
+    @PutMapping("/account/update")
+    public ResponseEntity<Object> updateUser(@RequestBody AbstractUserModel abstractUserModel) throws ApplicationException {
+        userService.updateUser(abstractUserModel);
+        return ResponseEntity.ok().build();
+    }
+
     @PreAuthorize("hasAuthority('permission:user:delete')")
     @DeleteMapping("/account/delete")
     public ResponseEntity<Object> deleteUser(HttpServletRequest httpRequest) throws ApplicationException {
@@ -128,7 +135,7 @@ public class UserController {
     }
 
     @PreAuthorize("hasAuthority('permission:user:read')")
-    @PostMapping("/chat/exit")
+    @PutMapping("/chat/exit")
     public ResponseEntity<Object> exitChat(@RequestParam("chat_id") int chatId) throws InvalidAttributesException, NotAllowedException {
         userService.exitChat(chatId);
         return ResponseEntity.ok().build();
@@ -143,7 +150,7 @@ public class UserController {
     }
 
     @PreAuthorize("hasAuthority('permission:user:update')")
-    @PostMapping("/chat/member/remove")
+    @PutMapping("/chat/member/remove")
     public ResponseEntity<Object> removeUserFromChat(@RequestParam("user_id") int userId,
                                                      @RequestParam("chat_id") int chatId) throws InvalidAttributesException, NotAllowedException {
         userService.removerUserFromChat(userId, chatId);

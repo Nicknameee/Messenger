@@ -34,6 +34,6 @@ public interface UserRepository extends JpaRepository<AbstractUserModel, Integer
     void deleteAbstractUserModelById(@Param("id") Integer id);
     @Modifying
     @Transactional
-    @Query("DELETE FROM AbstractUserModel user WHERE user.email = :login OR user.username = :login AND user.status = 'DISABLED'")
+    @Query("DELETE FROM AbstractUserModel user WHERE user.email = :login AND user.status = 'DISABLED' OR user.username = :login AND user.status = 'DISABLED'")
     void deleteDisabledUser(@Param("login") String login);
 }

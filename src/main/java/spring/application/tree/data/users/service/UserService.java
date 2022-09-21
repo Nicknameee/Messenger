@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import spring.application.tree.data.chats.service.ChatService;
 import spring.application.tree.data.exceptions.ApplicationException;
+import spring.application.tree.data.exceptions.DataNotFoundException;
 import spring.application.tree.data.exceptions.InvalidAttributesException;
 import spring.application.tree.data.exceptions.NotAllowedException;
 import spring.application.tree.data.users.models.AbstractUserModel;
@@ -73,6 +74,17 @@ public class UserService {
                                           LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
         userDataAccessObject.saveUser(abstractUserModel);
+    }
+
+    public void updateUser(AbstractUserModel updatedUser) throws ApplicationException {
+        AbstractUserModel oldUser = userDataAccessObject.getUserById(updatedUser.getId());
+        if (oldUser == null) {
+            throw new DataNotFoundException(String.format("User with following ID was not found: %s", updatedUser.getId()),
+                                            Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                            LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
+        oldUser.mergeChanges(updatedUser);
+        userDataAccessObject.updateUser(oldUser);
     }
 
     private boolean checkUserCredentialsAvailable(String email, String username) throws InvalidAttributesException {
