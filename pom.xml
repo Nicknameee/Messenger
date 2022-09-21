@@ -189,5 +189,11 @@
       <version>${json.web.token.version}</version>
       <scope>runtime</scope>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/joda-time/joda-time -->
+    <dependency>
+      <groupId>joda-time</groupId>
+      <artifactId>joda-time</artifactId>
+      <version>2.11.1</version>
+    </dependency>
   </dependencies>
 </project>

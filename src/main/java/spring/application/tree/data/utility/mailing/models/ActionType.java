@@ -3,15 +3,25 @@ package spring.application.tree.data.utility.mailing.models;
 import lombok.Getter;
 
 import java.util.Arrays;
+import java.util.List;
 
 public enum ActionType {
-    SIGN_UP("sign_up");
+    SIGN_UP("sign_up", "to sign up"),
+    RESTORE_PASSWORD("restore_password", "to restore password"),
+    SPAM("spam", ""),
+    NOTIFICATION("notification", "");
 
     @Getter
     private final String description;
+    @Getter
+    private final String processDescription;
 
-    ActionType(String description) {
+    public static final List<ActionType> confirmationActions = Arrays.asList(SIGN_UP, RESTORE_PASSWORD);
+    public static final List<ActionType> simpleActions = Arrays.asList(SPAM, NOTIFICATION);
+
+    ActionType(String description, String processDescription) {
         this.description = description;
+        this.processDescription = processDescription;
     }
 
     public static ActionType fromKey(String actionDescription) {

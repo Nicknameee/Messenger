@@ -106,6 +106,8 @@ public class UserDataAccessObject {
                                                  Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
+        final String query = "DELETE FROM users_to_chats WHERE user_id = ?";
+        jdbcTemplate.update(query, id);
         userRepository.deleteAbstractUserModelById(id);
     }
 
@@ -204,5 +206,14 @@ public class UserDataAccessObject {
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
         userRepository.enableUser(email);
+    }
+
+    public void deleteActivationExpiredAccountByLogin(String login) throws InvalidAttributesException {
+        if (login == null || login.isEmpty()) {
+            throw new InvalidAttributesException(String.format("Username/email is invalid: %s", login),
+                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
+        userRepository.deleteDisabledUser(login);
     }
 }

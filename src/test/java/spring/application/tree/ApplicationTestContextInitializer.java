@@ -10,5 +10,6 @@ public class ApplicationTestContextInitializer implements ApplicationContextInit
         System.setProperty("DB_URL", "jdbc:postgresql://localhost:5432/chat");
         System.setProperty("DB_USERNAME", "postgres");
         System.setProperty("DB_PASSWORD", "1904");
+        System.setProperty("MAIL", "SOME_MAIL");
     }
 }

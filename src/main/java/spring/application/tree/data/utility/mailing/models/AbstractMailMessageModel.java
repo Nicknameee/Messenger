@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.TimeZone;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,4 +17,5 @@ public class AbstractMailMessageModel {
     private String text;
     private MailType mailType;
     private ActionType actionType;
+    private String clientTimezone = TimeZone.getDefault().getID();
 }

@@ -172,4 +172,8 @@ public class UserService {
     public void enableUser(String email) throws InvalidAttributesException {
         userDataAccessObject.enableUser(email);
     }
+
+    public void deleteActivationExpiredAccountByLogin(String login) throws InvalidAttributesException {
+        userDataAccessObject.deleteActivationExpiredAccountByLogin(login);
+    }
 }

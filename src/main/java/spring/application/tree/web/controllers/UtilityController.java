@@ -11,8 +11,7 @@ import spring.application.tree.data.exceptions.InvalidAttributesException;
 import spring.application.tree.data.users.service.UserService;
 import spring.application.tree.data.utility.mailing.models.AbstractMailMessageModel;
 import spring.application.tree.data.utility.mailing.models.ActionType;
-import spring.application.tree.data.utility.mailing.service.MailService;
-import spring.application.tree.data.utility.mailing.service.MailUtility;
+import spring.application.tree.data.utility.mailing.service.MailActionsUtility;
 import spring.application.tree.data.utility.tasks.ActionHistoryStorage;
 
 import java.net.URI;
@@ -26,8 +25,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class UtilityController {
     private final UserService userService;
-    private final MailService mailService;
-    private final MailUtility mailUtility;
+    private final MailActionsUtility mailActionsUtility;
 
     @GetMapping("/credentials/availability")
     public ResponseEntity<Object> checkCredentialsAvailability(@RequestParam("email") String email,
@@ -43,9 +41,9 @@ public class UtilityController {
         return ResponseEntity.ok(ZoneId.getAvailableZoneIds());
     }
 
-    @PostMapping("/mail/confirm/send")
+    @PostMapping("/mail/send")
     public ResponseEntity<Object> createMessageSendingTask(@RequestBody AbstractMailMessageModel abstractMailMessageModel) throws ApplicationException {
-        mailUtility.sendConfirmationEmailMessage(abstractMailMessageModel);
+        mailActionsUtility.sendMessage(abstractMailMessageModel);
         return ResponseEntity.ok().build();
     }
 
