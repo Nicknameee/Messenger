@@ -22,6 +22,25 @@ public class ActionHistoryStorage {
      * Key - user email, value - confirmation code and action type
      */
     private static final Map<String, PairValue<String, ActionType>> userToConfirmationCode = new HashMap<>();
+    /**
+     * Key - user email, value - postponed task and action type
+     */
+    private static final Map<String, PairValue<ScheduledFuture<?>, ActionType>> userToPostponedTask = new HashMap<>();
+
+    public static void putPostponedTask(String email, ScheduledFuture<?> task, ActionType actionType) throws InvalidAttributesException {
+        if (email == null || email.isEmpty() || task == null) {
+            throw new InvalidAttributesException(String.format("Email: %s or confirmation task: %s is invalid", email, task),
+                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
+        synchronized (userToPostponedTask) {
+            if (userToPostponedTask.containsKey(email)) {
+                userToPostponedTask.get(email).getKey().cancel(true);
+            }
+            userToPostponedTask.remove(email);
+            userToPostponedTask.put(email, new PairValue<>(task, actionType));
+        }
+    }
 
     public static void putConfirmationTask(String email, ScheduledFuture<?> task, int expiringDelay, ChronoUnit unit) throws InvalidAttributesException {
         if (email == null || email.isEmpty() || task == null) {
@@ -29,8 +48,10 @@ public class ActionHistoryStorage {
                                                  Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
-        userToConfirmationTask.remove(email);
-        userToConfirmationTask.put(email, new PairValue<>(task, LocalDateTime.now().plus(expiringDelay, unit)));
+        synchronized (userToConfirmationTask) {
+            userToConfirmationTask.remove(email);
+            userToConfirmationTask.put(email, new PairValue<>(task, LocalDateTime.now().plus(expiringDelay, unit)));
+        }
     }
 
     public static void putConfirmationCode(String email, String code, ActionType actionType) throws InvalidAttributesException {
@@ -39,8 +60,10 @@ public class ActionHistoryStorage {
                                                  Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
-        userToConfirmationCode.remove(email);
-        userToConfirmationCode.put(email, new PairValue<>(code, actionType));
+        synchronized (userToConfirmationCode) {
+            userToConfirmationCode.remove(email);
+            userToConfirmationCode.put(email, new PairValue<>(code, actionType));
+        }
     }
 
     public static void removeConfirmationTask(String email) throws InvalidAttributesException {

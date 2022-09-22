@@ -68,7 +68,8 @@ public class MailActionsUtility {
                 }
             };
             try {
-                scheduleService.scheduleOnceFireTask(expireConfirmation, Integer.parseInt(properties.get("duration")), TimeUnit.SECONDS);
+                ScheduledFuture<?> task = scheduleService.scheduleOnceFireTask(expireConfirmation, Integer.parseInt(properties.get("duration")), TimeUnit.SECONDS);
+                ActionHistoryStorage.putPostponedTask(abstractMailMessageModel.getRecipient(), task, abstractMailMessageModel.getActionType());
             } catch (InvalidAttributesException e) {
                 throw new RuntimeException(e);
             }

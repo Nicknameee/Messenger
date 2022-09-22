@@ -8,6 +8,8 @@ import java.util.List;
 public enum ActionType {
     SIGN_UP("sign_up", "to sign up"),
     RESTORE_PASSWORD("restore_password", "to restore password"),
+    CHANGE_EMAIL("change_email", "to change email"),
+    CHANGE_PASSWORD("change_password", "to change password"),
     SPAM("spam", ""),
     NOTIFICATION("notification", "");
 
@@ -16,7 +18,7 @@ public enum ActionType {
     @Getter
     private final String processDescription;
 
-    public static final List<ActionType> confirmationActions = Arrays.asList(SIGN_UP, RESTORE_PASSWORD);
+    public static final List<ActionType> confirmationActions = Arrays.asList(SIGN_UP, RESTORE_PASSWORD, CHANGE_EMAIL, CHANGE_PASSWORD);
     public static final List<ActionType> simpleActions = Arrays.asList(SPAM, NOTIFICATION);
 
     ActionType(String description, String processDescription) {

@@ -28,11 +28,19 @@ public class UtilityController {
     private final MailActionsUtility mailActionsUtility;
 
     @GetMapping("/credentials/availability")
-    public ResponseEntity<Object> checkCredentialsAvailability(@RequestParam("email") String email,
-                                                               @RequestParam("username") String username) throws ApplicationException {
-        Map<String, Boolean> response = new HashMap<>();
-        response.put("email", userService.checkEmailAvailability(email));
-        response.put("username", userService.checkUsernameAvailability(username));
+    public ResponseEntity<Object> checkCredentialsAvailability(@RequestParam(required = false) String email,
+                                                               @RequestParam(required = false) String username) throws ApplicationException {
+        Map<String, Object> response = new HashMap<>();
+        if (email == null && username == null) {
+            response.put("error", "No passed parameter detected, email and/or username checking is impossible");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+        if (email != null) {
+            response.put("email", userService.checkEmailAvailability(email));
+        }
+        if (username != null) {
+            response.put("username", userService.checkUsernameAvailability(username));
+        }
         return ResponseEntity.ok(response);
     }
 
