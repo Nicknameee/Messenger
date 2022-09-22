@@ -97,7 +97,9 @@ public class MailService {
                     log.error(ex.getMessage(), ex);
                     log.error(String.format("Error occurs when trying to remove confirmation code on fail email sending, recipient: %s",
                                              abstractMailMessageModel.getRecipient()));
+                    throw new RuntimeException(e);
                 }
+                throw new RuntimeException(e);
             }
         };
         return task;

@@ -15,6 +15,7 @@ import spring.application.tree.data.utility.mailing.models.MailType;
 import spring.application.tree.data.utility.properties.CustomPropertyDataLoader;
 import spring.application.tree.data.utility.properties.CustomPropertySourceConverter;
 import spring.application.tree.data.utility.tasks.ActionHistoryStorage;
+import spring.application.tree.data.utility.tasks.TaskFactory;
 
 import javax.annotation.PostConstruct;
 import java.time.temporal.ChronoUnit;
@@ -31,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 public class MailActionsUtility {
     private final ScheduleService scheduleService;
     private final MailService mailService;
-    private final UserService userService;
+    private final TaskFactory taskFactory;
     /**
      * Key - property name, value - property value
      */
@@ -55,24 +56,7 @@ public class MailActionsUtility {
         Runnable mailTask = mailService.sendMessage(processedMailMessage);
         Runnable confirmationTask = () -> {
             mailTask.run();
-            Runnable expireConfirmation = () -> {
-                try {
-                    if (abstractMailMessageModel.getActionType() == ActionType.SIGN_UP) {
-                        userService.deleteActivationExpiredAccountByLogin(abstractMailMessageModel.getRecipient());
-                    }
-                    ActionHistoryStorage.removeConfirmationCode(abstractMailMessageModel.getRecipient());
-                    ActionHistoryStorage.removeConfirmationTask(abstractMailMessageModel.getRecipient());
-                } catch (InvalidAttributesException e) {
-                    log.error(e.getMessage(), e);
-                    log.error(String.format("Unable to remove confirmation data for user expired task: %s", abstractMailMessageModel.getRecipient()));
-                }
-            };
-            try {
-                ScheduledFuture<?> task = scheduleService.scheduleOnceFireTask(expireConfirmation, Integer.parseInt(properties.get("duration")), TimeUnit.SECONDS);
-                ActionHistoryStorage.putPostponedTask(abstractMailMessageModel.getRecipient(), task, abstractMailMessageModel.getActionType());
-            } catch (InvalidAttributesException e) {
-                throw new RuntimeException(e);
-            }
+            taskFactory.callRollbackTaskForSignUpConfirmation(abstractMailMessageModel.getRecipient(), abstractMailMessageModel.getActionType(), scheduleService, properties);
         };
         ScheduledFuture<?> task = scheduleService.scheduleOnceFireTask(confirmationTask, 0, TimeUnit.SECONDS);
         ActionHistoryStorage.putConfirmationTask(abstractMailMessageModel.getRecipient(), task, Integer.parseInt(properties.get("duration")), ChronoUnit.SECONDS);
