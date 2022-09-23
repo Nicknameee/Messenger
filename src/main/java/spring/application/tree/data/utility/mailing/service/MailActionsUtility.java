@@ -1,5 +1,6 @@
 package spring.application.tree.data.utility.mailing.service;
 
+import com.fasterxml.uuid.Generators;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
@@ -62,7 +63,7 @@ public class MailActionsUtility {
     }
 
     private String generateUniqueCode() {
-        return UUID.randomUUID().toString();
+        return Generators.timeBasedGenerator().generate().toString();
     }
 
     private AbstractMailMessageModel processConfirmationMailMessageModelForSending(AbstractMailMessageModel abstractMailMessageModel) throws InvalidAttributesException, ParseException {

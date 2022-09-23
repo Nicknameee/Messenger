@@ -195,5 +195,11 @@
       <artifactId>joda-time</artifactId>
       <version>2.11.1</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/com.fasterxml.uuid/java-uuid-generator -->
+    <dependency>
+      <groupId>com.fasterxml.uuid</groupId>
+      <artifactId>java-uuid-generator</artifactId>
+      <version>4.0.1</version>
+    </dependency>
   </dependencies>
 </project>
