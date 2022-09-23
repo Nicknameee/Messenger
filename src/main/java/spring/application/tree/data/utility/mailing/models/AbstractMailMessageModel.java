@@ -1,5 +1,6 @@
 package spring.application.tree.data.utility.mailing.models;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,5 +18,6 @@ public class AbstractMailMessageModel {
     private String text;
     private MailType mailType;
     private ActionType actionType;
+    @JsonAlias({"timezone"})
     private String clientTimezone = TimeZone.getDefault().getID();
 }

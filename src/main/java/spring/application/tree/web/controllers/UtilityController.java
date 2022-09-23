@@ -15,6 +15,7 @@ import spring.application.tree.data.utility.mailing.service.MailActionsUtility;
 import spring.application.tree.data.utility.tasks.ActionHistoryStorage;
 
 import java.net.URI;
+import java.text.ParseException;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,7 +51,7 @@ public class UtilityController {
     }
 
     @PostMapping("/mail/send")
-    public ResponseEntity<Object> createMessageSendingTask(@RequestBody AbstractMailMessageModel abstractMailMessageModel) throws ApplicationException {
+    public ResponseEntity<Object> createMessageSendingTask(@RequestBody AbstractMailMessageModel abstractMailMessageModel) throws ApplicationException, ParseException {
         mailActionsUtility.sendMessage(abstractMailMessageModel);
         return ResponseEntity.ok().build();
     }
