@@ -14,9 +14,11 @@ import spring.application.tree.data.utility.mailing.service.MailActionsUtility;
 import spring.application.tree.data.utility.tasks.TaskUtility;
 
 import java.text.ParseException;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;
 
 @RestController
 @RequestMapping("/api/utility")
@@ -46,7 +48,12 @@ public class UtilityController {
 
     @GetMapping("/timezone")
     public ResponseEntity<Object> getAvailableTimezones() {
-        return ResponseEntity.ok(ZoneId.getAvailableZoneIds());
+        Map<String, Object> zones = new HashMap<>();
+        ZoneId.getAvailableZoneIds().forEach(id -> {
+            TimeZone zone = TimeZone.getTimeZone(id);
+            zones.put(id, zone.toZoneId().getRules().getOffset(Instant.now()).getId());
+        });
+        return ResponseEntity.ok(zones);
     }
 
     @PostMapping("/mail/send")
