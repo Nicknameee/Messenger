@@ -10,11 +10,9 @@ import spring.application.tree.data.exceptions.ConfirmationException;
 import spring.application.tree.data.exceptions.InvalidAttributesException;
 import spring.application.tree.data.users.service.UserService;
 import spring.application.tree.data.utility.mailing.models.AbstractMailMessageModel;
-import spring.application.tree.data.utility.mailing.models.ActionType;
 import spring.application.tree.data.utility.mailing.service.MailActionsUtility;
-import spring.application.tree.data.utility.tasks.ActionHistoryStorage;
+import spring.application.tree.data.utility.tasks.TaskUtility;
 
-import java.net.URI;
 import java.text.ParseException;
 import java.time.ZoneId;
 import java.util.HashMap;
@@ -27,6 +25,7 @@ import java.util.Map;
 public class UtilityController {
     private final UserService userService;
     private final MailActionsUtility mailActionsUtility;
+    private final TaskUtility taskUtility;
 
     @GetMapping("/credentials/availability")
     public ResponseEntity<Object> checkCredentialsAvailability(@RequestParam(required = false) String email,
@@ -60,18 +59,6 @@ public class UtilityController {
     public ResponseEntity<Object> confirmTaskExecution(@PathVariable("code")   String code,
                                                        @PathVariable("email")  String email,
                                                        @PathVariable("action") String action) throws InvalidAttributesException, ConfirmationException {
-        boolean isVerified = ActionHistoryStorage.markTaskAsCompleted(email, code, ActionType.fromKey(action));
-        ResponseEntity<Object> response;
-        if (isVerified) {
-            switch (ActionType.fromKey(action)) {
-                case SIGN_UP:
-                    userService.enableUser(email);
-                    break;
-            }
-            response = ResponseEntity.status(HttpStatus.FOUND).location(URI.create("http://localhost:9000")).build();
-        } else {
-            response = ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();
-        }
-        return response;
+        return taskUtility.confirmTaskExecution(code, email, action);
     }
 }

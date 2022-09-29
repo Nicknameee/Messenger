@@ -36,7 +36,7 @@ public class MailActionsUtility {
      * Key - property name, value - property value
      */
     private static Map<String, String> properties;
-    private final DateConvertingUtility DATE_CONVERTING_UTILITY = new DateConvertingUtility();
+    private final DateConvertingUtility dateConvertingUtility = new DateConvertingUtility();
 
     @PostConstruct
     private void initializeProperties() {
@@ -56,7 +56,7 @@ public class MailActionsUtility {
         Runnable mailTask = mailService.sendMessage(processedMailMessage);
         Runnable confirmationTask = () -> {
             mailTask.run();
-            taskFactory.callRollbackTaskForSignUpConfirmation(abstractMailMessageModel.getRecipient(), abstractMailMessageModel.getActionType(), scheduleService, properties);
+            taskFactory.callRollbackTask(abstractMailMessageModel.getRecipient(), abstractMailMessageModel.getActionType(), scheduleService, properties);
         };
         ScheduledFuture<?> task = scheduleService.scheduleOnceFireTask(confirmationTask, 0, TimeUnit.SECONDS);
         ActionHistoryStorage.putConfirmationTask(abstractMailMessageModel.getRecipient(), task, Integer.parseInt(properties.get("duration")), ChronoUnit.SECONDS);
@@ -74,7 +74,7 @@ public class MailActionsUtility {
         String recipient = abstractMailMessageModel.getRecipient();
         String action = abstractMailMessageModel.getActionType().getDescription();
         Date expireDate = new DateTime().plusSeconds(Integer.parseInt(properties.get("duration"))).toDate();
-        ZonedDateTime convertedDate = DATE_CONVERTING_UTILITY.convertDate(TimeZone.getTimeZone(abstractMailMessageModel.getClientTimezone()), expireDate);
+        ZonedDateTime convertedDate = dateConvertingUtility.convertDate(TimeZone.getTimeZone(abstractMailMessageModel.getClientTimezone()), expireDate);
         subject = "Confirmation message";
         if (abstractMailMessageModel.getMailType() == MailType.HTML) {
             text = String.format("<p style=\"font-size: 1.33em;\">You are trying <span style=\"font-weight: bold; font-size: 1.33em;\">%s</span></p>",
@@ -82,11 +82,11 @@ public class MailActionsUtility {
             text += "<a style=\"font-weight: bold; font-color: black; text-decoration: underline; font-size: 1.33em;\" href=\"{link}\">Click here for verifying action</a>";
             text += "<p style=\"font-size: 1.33em;\">Link expires at <span style=\"font-weight:bold; font-size: 1.33em;\">{expire}</span></p>";
             text = text.replace("{link}", String.format("%s/api/utility/task/confirm/%s/%s/%s", serverURI, uniqueCode, recipient, action));
-            text = text.replace("{expire}", DATE_CONVERTING_UTILITY.format(convertedDate, "dd.MM.yyyy HH:mm:ssXXX"));
+            text = text.replace("{expire}", dateConvertingUtility.format(convertedDate, "dd.MM.yyyy HH:mm:ssXXX"));
         } else {
             text = String.format("You are trying %s\n", abstractMailMessageModel.getActionType().getProcessDescription());
             text += String.format("%s/api/utility/task/confirm/%s/%s/%s\n", serverURI, uniqueCode, recipient, action);
-            text += String.format("Link expires at %s", DATE_CONVERTING_UTILITY.format(convertedDate, "dd.MM.yyyy HH:mm:ssXXX"));
+            text += String.format("Link expires at %s", dateConvertingUtility.format(convertedDate, "dd.MM.yyyy HH:mm:ssXXX"));
         }
         ActionHistoryStorage.putConfirmationCode(abstractMailMessageModel.getRecipient(), uniqueCode, abstractMailMessageModel.getActionType());
         AbstractMailMessageModel processedAbstractMailMessageModel = new AbstractMailMessageModel();

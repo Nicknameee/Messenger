@@ -110,7 +110,7 @@ public class AbstractUserModel implements UserDetails {
             this.username = abstractUserModel.getUsername();
         }
         if (abstractUserModel.getPassword() != null) {
-            this.password = abstractUserModel.getPassword();
+            this.password = DataEncoderTool.encodeData(abstractUserModel.getPassword());
         }
         if (abstractUserModel.getLanguage() != null) {
             this.language = abstractUserModel.getLanguage();

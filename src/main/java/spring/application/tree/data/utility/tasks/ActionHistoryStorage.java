@@ -109,8 +109,8 @@ public class ActionHistoryStorage {
     }
 
     public static boolean markTaskAsCompleted(String email, String code, ActionType actionType) throws InvalidAttributesException, ConfirmationException {
-        if (email == null || email.isEmpty() || code == null || code.isEmpty()) {
-            throw new InvalidAttributesException(String.format("Email: %s or confirmation code: %s is invalid", email, code),
+        if (email == null || email.isEmpty() || code == null || code.isEmpty() || actionType == null) {
+            throw new InvalidAttributesException(String.format("Email: %s or confirmation code: %s or action: %s is invalid", email, code, actionType),
                                                  Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }

@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 public class TaskFactory {
     private final UserService userService;
 
-    public Runnable getRollbackTaskForSignUpConfirmation(String email) {
+    private Runnable getRollbackTaskForSignUpConfirmation(String email) {
         Runnable task = () -> {
             try {
                 userService.deleteActivationExpiredAccountByLogin(email);
@@ -32,13 +32,21 @@ public class TaskFactory {
         return task;
     }
 
-    public void callRollbackTaskForSignUpConfirmation(String email, ActionType actionType, ScheduleService scheduleService, Map<String, String> properties) {
+    private void callRollbackTaskForSignUpConfirmation(String email, ActionType actionType, ScheduleService scheduleService, Map<String, String> properties) {
         Runnable expireConfirmation = getRollbackTaskForSignUpConfirmation(email);
         try {
             ScheduledFuture<?> task = scheduleService.scheduleOnceFireTask(expireConfirmation, Integer.parseInt(properties.get("duration")), TimeUnit.SECONDS);
             ActionHistoryStorage.putPostponedTask(email, task, actionType);
         } catch (InvalidAttributesException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public void callRollbackTask(String recipient, ActionType actionType, ScheduleService scheduleService, Map<String, String> properties) {
+        switch (actionType) {
+            case SIGN_UP:
+                callRollbackTaskForSignUpConfirmation(recipient, actionType, scheduleService, properties);
+                break;
         }
     }
 }
