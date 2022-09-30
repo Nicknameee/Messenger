@@ -185,6 +185,9 @@ public class UserService {
         userDataAccessObject.enableUser(email);
     }
 
+    public void disableUser(String email) throws InvalidAttributesException {
+        userDataAccessObject.disableUser(email);
+    }
     public void deleteActivationExpiredAccountByLogin(String login) throws InvalidAttributesException {
         userDataAccessObject.deleteActivationExpiredAccountByLogin(login);
     }

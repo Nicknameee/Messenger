@@ -219,6 +219,15 @@ public class UserDataAccessObject {
         userRepository.enableUser(email);
     }
 
+    public void disableUser(String email) throws InvalidAttributesException {
+        if (email == null || email.isEmpty()) {
+            throw new InvalidAttributesException(String.format("Email is invalid: %s", email),
+                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
+        userRepository.disableUser(email);
+    }
+
     public void deleteActivationExpiredAccountByLogin(String login) throws InvalidAttributesException {
         if (login == null || login.isEmpty()) {
             throw new InvalidAttributesException(String.format("Username/email is invalid: %s", login),

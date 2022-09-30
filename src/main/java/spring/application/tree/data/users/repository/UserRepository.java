@@ -30,6 +30,10 @@ public interface UserRepository extends JpaRepository<AbstractUserModel, Integer
     void enableUser(@Param("email") String email);
     @Modifying
     @Transactional
+    @Query("UPDATE AbstractUserModel u SET u.status = 'DISABLED' WHERE u.email = :email")
+    void disableUser(@Param("email") String email);
+    @Modifying
+    @Transactional
     @Query("DELETE FROM AbstractUserModel user WHERE user.id = :id")
     void deleteAbstractUserModelById(@Param("id") Integer id);
     @Modifying
