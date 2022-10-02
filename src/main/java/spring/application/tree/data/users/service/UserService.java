@@ -15,6 +15,8 @@ import spring.application.tree.data.exceptions.InvalidAttributesException;
 import spring.application.tree.data.exceptions.NotAllowedException;
 import spring.application.tree.data.users.models.AbstractUserModel;
 import spring.application.tree.data.users.repository.UserDataAccessObject;
+import spring.application.tree.data.users.security.DataEncoderTool;
+import spring.application.tree.data.utility.tasks.TaskUtility;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
@@ -73,6 +75,15 @@ public class UserService {
                                           Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                           LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
+        Runnable postponeSuccessTask = () -> {
+            try {
+                enableUser(abstractUserModel.getEmail());
+            } catch (InvalidAttributesException e) {
+                log.error(e.getMessage(), e);
+                log.error(String.format("Could not enable user: %s", abstractUserModel.getEmail()));
+            }
+        };
+        TaskUtility.putSuccessConfirmationTask(abstractUserModel.getEmail(), postponeSuccessTask);
         userDataAccessObject.saveUser(abstractUserModel);
     }
 
@@ -85,6 +96,10 @@ public class UserService {
         }
         oldUser.mergeChanges(updatedUser);
         userDataAccessObject.updateUser(oldUser);
+    }
+
+    public void updateUserPassword(String login, String newPassword) throws InvalidAttributesException {
+        userDataAccessObject.updateUserPassword(login, DataEncoderTool.encodeData(newPassword));
     }
 
     private boolean checkUserCredentialsAvailable(String email, String username) throws InvalidAttributesException {
@@ -188,6 +203,7 @@ public class UserService {
     public void disableUser(String email) throws InvalidAttributesException {
         userDataAccessObject.disableUser(email);
     }
+
     public void deleteActivationExpiredAccountByLogin(String login) throws InvalidAttributesException {
         userDataAccessObject.deleteActivationExpiredAccountByLogin(login);
     }

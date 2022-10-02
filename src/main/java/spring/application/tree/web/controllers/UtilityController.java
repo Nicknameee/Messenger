@@ -68,4 +68,19 @@ public class UtilityController {
                                                        @PathVariable("action") String action) throws InvalidAttributesException, ConfirmationException {
         return taskUtility.confirmTaskExecution(code, email, action);
     }
+
+    @PostMapping("/restoring/password")
+    public ResponseEntity<Object> restoreUserPassword(@RequestParam("email")    String email,
+                                                      @RequestParam("password") String password) {
+        Runnable postponeSuccessTask = () -> {
+            try {
+                userService.updateUserPassword(email, password);
+            } catch (InvalidAttributesException e) {
+                log.error(e.getMessage(), e);
+                log.error(String.format("Could not update password for user: %s", email));
+            }
+        };
+        TaskUtility.putSuccessConfirmationTask(email, postponeSuccessTask);
+        return ResponseEntity.ok().build();
+    }
 }

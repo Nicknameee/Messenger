@@ -210,6 +210,15 @@ public class UserDataAccessObject {
         userRepository.updateUserLogoutTimeByUsername(username);
     }
 
+    public void updateUserPassword(String login, String newPassword) throws InvalidAttributesException {
+        if (login == null || login.isEmpty() || newPassword == null || newPassword.isEmpty()) {
+            throw new InvalidAttributesException(String.format("Username: %s or email is invalid: %s", login, newPassword),
+                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
+        userRepository.updateUserPassword(login, newPassword);
+    }
+
     public void enableUser(String email) throws InvalidAttributesException {
         if (email == null || email.isEmpty()) {
             throw new InvalidAttributesException(String.format("Email is invalid: %s", email),
