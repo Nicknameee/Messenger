@@ -8,4 +8,10 @@ import lombok.Data;
 public class SystemTask<T> {
     private T id;
     private Runnable task;
+
+    public void run() {
+        if (task != null) {
+            task.run();
+        }
+    }
 }

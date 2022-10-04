@@ -48,13 +48,7 @@ public class ChatDataAccessObject {
     }
 
     public int addChat(AbstractChatModel abstractChatModel) throws InvalidAttributesException {
-        if (abstractChatModel.getTitle() == null || abstractChatModel.getTitle().isEmpty() ||
-            (abstractChatModel.isPrivate() && (abstractChatModel.getPassword() == null || abstractChatModel.getPassword().isEmpty())) ||
-            abstractChatModel.getAuthorId() <= 0) {
-            throw new InvalidAttributesException(buildExceptionMessageForValidationOfChatModel(abstractChatModel),
-                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
-                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
-        }
+        validateChatModel(abstractChatModel);
         final String query = "INSERT INTO chats(title, description, private, password, author_id) VALUES(?, ?, ?, ?, ?) RETURNING id;";
         final String queryUsersToChatAssociationUpdate = "INSERT INTO users_to_chats(user_id, chat_id) VALUES(?, ?);";
         Integer userId = UserService.getIdOfCurrentlyAuthenticatedUser();
@@ -74,13 +68,7 @@ public class ChatDataAccessObject {
     }
 
     public void updateChat(AbstractChatModel abstractChatModel) throws InvalidAttributesException {
-        if (abstractChatModel.getTitle() == null || abstractChatModel.getTitle().isEmpty() ||
-            (abstractChatModel.isPrivate() && (abstractChatModel.getPassword() == null || abstractChatModel.getPassword().isEmpty())) ||
-            abstractChatModel.getAuthorId() <= 0) {
-            throw new InvalidAttributesException(buildExceptionMessageForValidationOfChatModel(abstractChatModel),
-                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
-                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
-        }
+        validateChatModel(abstractChatModel);
         final String query = "UPDATE chats SET title = ?, description = ?, private = ?, password = ? WHERE id = ?;";
         jdbcTemplate.update(query, abstractChatModel.getTitle(), abstractChatModel.getDescription(),
                                    abstractChatModel.isPrivate(), abstractChatModel.getPassword(), abstractChatModel.getId());
@@ -100,7 +88,7 @@ public class ChatDataAccessObject {
         jdbcTemplate.update(query, chatId);
     }
 
-    private String buildExceptionMessageForValidationOfChatModel(AbstractChatModel abstractChatModel) {
+    private void validateChatModel(AbstractChatModel abstractChatModel) throws InvalidAttributesException {
         StringBuilder exceptionText = new StringBuilder();
         if (abstractChatModel.getTitle() == null || abstractChatModel.getTitle().isEmpty()) {
             exceptionText.append(String.format("Title is invalid: %s ", abstractChatModel.getTitle()));
@@ -111,7 +99,11 @@ public class ChatDataAccessObject {
         if (abstractChatModel.getAuthorId() <= 0) {
             exceptionText.append(String.format("Member ID is invalid: %s", abstractChatModel.getAuthorId()));
         }
-        return exceptionText.toString();
+        if (!exceptionText.toString().isEmpty()) {
+            throw new InvalidAttributesException(exceptionText.toString(),
+                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
     }
 
     public void changeChatOwner(int chatId, int newAuthorId) throws InvalidAttributesException {

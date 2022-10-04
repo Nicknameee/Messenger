@@ -38,11 +38,11 @@ public class ApplicationQuartzConfiguration {
                             .withSchedule(CronScheduleBuilder.cronSchedule(cron))
                             .build();
                     scheduler.scheduleJob(quartzJobDetail, quartzJobTrigger);
-                } catch (SchedulerException e) {
+                } catch (SchedulerException | NoSuchFieldException e) {
                     log.error(e.getMessage(), e);
                 }
             }
-        } catch (SchedulerException | NoSuchFieldException | IllegalAccessException e) {
+        } catch (SchedulerException | IllegalAccessException e) {
             log.error(e.getMessage(), e);
         }
     }

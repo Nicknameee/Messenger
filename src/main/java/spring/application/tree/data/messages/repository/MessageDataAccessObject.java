@@ -40,12 +40,7 @@ public class MessageDataAccessObject {
     }
 
     public int addMessage(AbstractMessageModel abstractMessageModel) throws InvalidAttributesException {
-        if (abstractMessageModel.getMessage() == null || abstractMessageModel.getMessage().isEmpty() ||
-            abstractMessageModel.getAuthorId() <= 0 || abstractMessageModel.getChatId() <= 0) {
-            throw new InvalidAttributesException(buildExceptionMessageForValidationOfMessageModel(abstractMessageModel),
-                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
-                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
-        }
+        validateMessageModel(abstractMessageModel);
         final String query = "INSERT INTO messages(message, sent_at, author_id, chat_id) VALUES(?, now(), ?, ?) RETURNING id;";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
@@ -78,7 +73,7 @@ public class MessageDataAccessObject {
         jdbcTemplate.update(query, messageId);
     }
 
-    private String buildExceptionMessageForValidationOfMessageModel(AbstractMessageModel abstractMessageModel) {
+    private void validateMessageModel(AbstractMessageModel abstractMessageModel) throws InvalidAttributesException {
         StringBuilder exceptionText = new StringBuilder();
         if (abstractMessageModel.getMessage() == null || abstractMessageModel.getMessage().isEmpty()) {
             exceptionText.append(String.format("Message is invalid: %s ", abstractMessageModel.getMessage()));
@@ -89,6 +84,10 @@ public class MessageDataAccessObject {
         if (abstractMessageModel.getChatId() <= 0) {
             exceptionText.append(String.format("Chat ID is invalid: %s", abstractMessageModel.getChatId()));
         }
-        return exceptionText.toString();
+        if (!exceptionText.toString().isEmpty()) {
+            throw new InvalidAttributesException(exceptionText.toString(),
+                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
     }
 }

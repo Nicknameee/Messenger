@@ -67,7 +67,7 @@ public class TaskUtility {
         if (isVerified) {
             synchronized (onSuccessConfirmationTask) {
                 if (onSuccessConfirmationTask.containsKey(email)) {
-                    onSuccessConfirmationTask.get(email).getValue().getTask().run();
+                    onSuccessConfirmationTask.get(email).getValue().run();
                     onSuccessConfirmationTask.remove(email);
                     return ResponseEntity.status(HttpStatus.FOUND).location(URI.create("http://localhost:9000")).build();
                 }

@@ -44,9 +44,9 @@ public class MailActionsUtility {
     }
 
     public void sendMessage(AbstractMailMessageModel abstractMailMessageModel) throws ApplicationException, ParseException {
-        if (ActionType.confirmationActions.contains(abstractMailMessageModel.getActionType())) {
+        if (ActionType.isConfirmationAction(abstractMailMessageModel.getActionType())) {
             sendConfirmationEmailMessage(abstractMailMessageModel);
-        } else if (ActionType.simpleActions.contains(abstractMailMessageModel.getActionType())) {
+        } else if (ActionType.isSimpleAction(abstractMailMessageModel.getActionType())) {
             mailService.sendMessage(abstractMailMessageModel).run();
         }
     }

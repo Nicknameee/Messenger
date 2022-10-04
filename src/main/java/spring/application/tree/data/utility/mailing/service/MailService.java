@@ -33,6 +33,8 @@ public class MailService {
         validateMessageModel(abstractMailMessageModel);
         if (abstractMailMessageModel.getMailType() == MailType.HTML) {
             return sendHtmlMailMessage(abstractMailMessageModel);
+        } else if (abstractMailMessageModel.getMailType() == MailType.PLAIN) {
+            return sendMailMessage(abstractMailMessageModel);
         }
         return null;
     }
@@ -48,7 +50,7 @@ public class MailService {
         if (abstractMailMessageModel.getActionType() == null) {
             exceptionMessage.append(String.format("Invalid action type: %s ", abstractMailMessageModel.getActionType()));
         }
-        if (ActionType.simpleActions.contains(abstractMailMessageModel.getActionType())) {
+        if (ActionType.isSimpleAction(abstractMailMessageModel.getActionType())) {
             if (abstractMailMessageModel.getSubject() == null || abstractMailMessageModel.getSubject().isEmpty()) {
                 exceptionMessage.append(String.format("Invalid subject: %s ", abstractMailMessageModel.getSubject()));
             }
@@ -78,7 +80,7 @@ public class MailService {
         return task;
     }
 
-    private Runnable sendHtmlMailMessage(AbstractMailMessageModel abstractMailMessageModel) throws InvalidAttributesException {
+    private Runnable sendHtmlMailMessage(AbstractMailMessageModel abstractMailMessageModel) {
         Runnable task = () -> {
             MimeMessage mimeMessage = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, "UTF-8");
@@ -91,15 +93,15 @@ public class MailService {
                 log.info(String.format("Sending email to: %s", abstractMailMessageModel.getRecipient()));
             } catch (MessagingException e) {
                 log.error(e.getMessage(), e);
-                try {
-                     ActionHistoryStorage.removeConfirmationCode(abstractMailMessageModel.getRecipient());
-                } catch (InvalidAttributesException ex) {
-                    log.error(ex.getMessage(), ex);
-                    log.error(String.format("Error occurs when trying to remove confirmation code on fail email sending, recipient: %s",
-                                             abstractMailMessageModel.getRecipient()));
-                    throw new RuntimeException(e);
+                if (ActionType.isConfirmationAction(abstractMailMessageModel.getActionType())) {
+                    try {
+                        ActionHistoryStorage.removeConfirmationCode(abstractMailMessageModel.getRecipient());
+                    } catch (InvalidAttributesException ex) {
+                        log.error(ex.getMessage(), ex);
+                        log.error(String.format("Error occurs when trying to remove confirmation code on fail email sending, recipient: %s",
+                                abstractMailMessageModel.getRecipient()));
+                    }
                 }
-                throw new RuntimeException(e);
             }
         };
         return task;
