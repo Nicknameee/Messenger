@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 import spring.application.tree.data.exceptions.SecurityException;
 import spring.application.tree.data.users.security.token.AuthenticationProcessingService;
 
+import javax.servlet.http.HttpServletRequest;
+
 @RestController
 @RequiredArgsConstructor
 @Profile(value = {"token", "boots_token"})
@@ -17,7 +19,8 @@ public class AuthenticationController {
 
     @PostMapping("/login")
     public ResponseEntity<Object> loginUser(@RequestParam("username") String username,
-                                            @RequestParam("password") String password) throws SecurityException {
-        return ResponseEntity.ok(authenticationProcessingService.authenticateUserWithTokenBasedAuthorizationStrategy(username, password));
+                                            @RequestParam("password") String password,
+                                            HttpServletRequest request) throws SecurityException {
+        return ResponseEntity.ok(authenticationProcessingService.authenticateUserWithTokenBasedAuthorizationStrategy(username, password, request));
     }
 }

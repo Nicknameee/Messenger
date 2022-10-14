@@ -14,6 +14,7 @@ import spring.application.tree.data.exceptions.SecurityException;
 import spring.application.tree.data.users.security.UserDetailsImplementationService;
 import spring.application.tree.data.users.service.UserService;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,12 +30,12 @@ public class AuthenticationProcessingService {
     private final AuthorizationTokenUtility authorizationTokenUtility;
     private final UserService userService;
 
-    public Map<String, Object> authenticateUserWithTokenBasedAuthorizationStrategy(String username, String password) throws SecurityException {
+    public Map<String, Object> authenticateUserWithTokenBasedAuthorizationStrategy(String username, String password, HttpServletRequest request) throws SecurityException {
         Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
         String token;
         if (authentication.isAuthenticated()) {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            token = authorizationTokenUtility.generateToken(userDetails);
+            token = authorizationTokenUtility.generateToken(userDetails, request);
         } else {
             throw new SecurityException("Authorization token can not be achieved",
                                         Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),

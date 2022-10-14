@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.GenericFilterBean;
@@ -28,7 +29,7 @@ public class PreLogoutTokenBasedFilter extends GenericFilterBean {
     private final AuthorizationTokenUtility authorizationTokenUtility;
 
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+    public void doFilter(@NonNull ServletRequest servletRequest, @NonNull ServletResponse servletResponse, @NonNull FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         if (request.getRequestURI().equals("/logout")) {
             String authorizationHeaderValue = request.getHeader("Authorization");
@@ -36,7 +37,7 @@ public class PreLogoutTokenBasedFilter extends GenericFilterBean {
                 String authorizationToken = authorizationHeaderValue.substring(7);
                 String username = authorizationTokenUtility.getUsernameFromToken(authorizationToken);
                 UserDetails userDetails = userDetailsImplementationService.loadUserByUsername(username);
-                if (authorizationToken.isEmpty() || !authorizationTokenUtility.validateToken(authorizationToken, userDetails)) {
+                if (authorizationToken.isEmpty() || !authorizationTokenUtility.validateToken(authorizationToken, userDetails, request)) {
                     HttpServletResponse response = (HttpServletResponse) servletResponse;
                     ObjectMapper jacksonMapper = new ObjectMapper();
                     Map<String, Object> responseBodyMap = new HashMap<>();

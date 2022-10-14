@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
@@ -30,14 +31,14 @@ public class AuthenticationLogoutTokenBasedSecurityHandler implements LogoutSucc
     private final UserService userService;
 
     @Override
-    public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
+    public void onLogoutSuccess(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, Authentication authentication) throws IOException {
         if (request.getRequestURI().equals("/logout")) {
             String authorizationHeaderValue = request.getHeader("Authorization");
             if (authorizationHeaderValue != null && authorizationHeaderValue.startsWith("Bearer ")) {
                 String authorizationToken = authorizationHeaderValue.substring(7);
                 String username = authorizationTokenUtility.getUsernameFromToken(authorizationToken);
                 UserDetails userDetails = userDetailsImplementationService.loadUserByUsername(username);
-                if (!authorizationToken.isEmpty() && authorizationTokenUtility.validateToken(authorizationToken, userDetails)) {
+                if (!authorizationToken.isEmpty() && authorizationTokenUtility.validateToken(authorizationToken, userDetails, request)) {
                     authorizationTokenUtility.blacklistToken(authorizationToken);
                     ObjectMapper jacksonMapper = new ObjectMapper();
                     Map<String, Object> responseBodyMap = new HashMap<>();

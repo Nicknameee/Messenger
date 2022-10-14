@@ -27,7 +27,7 @@ public class AuthorizationTokenRequestFilter extends OncePerRequestFilter {
     private final AuthorizationTokenUtility authorizationTokenUtility;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain) throws ServletException, IOException {
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain) throws ServletException, IOException {
         String authorizationHeaderValue = request.getHeader("Authorization");
         if (authorizationHeaderValue != null && authorizationHeaderValue.startsWith("Bearer ")) {
             String authorizationToken = authorizationHeaderValue.substring(7);
@@ -35,7 +35,7 @@ public class AuthorizationTokenRequestFilter extends OncePerRequestFilter {
                 String username = authorizationTokenUtility.getUsernameFromToken(authorizationToken);
                 if (!username.isEmpty() && SecurityContextHolder.getContext().getAuthentication() == null) {
                     UserDetails userDetails = userDetailsImplementationService.loadUserByUsername(username);
-                    if (authorizationTokenUtility.validateToken(authorizationToken, userDetails)) {
+                    if (authorizationTokenUtility.validateToken(authorizationToken, userDetails, request)) {
                         UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
                                 new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                         usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

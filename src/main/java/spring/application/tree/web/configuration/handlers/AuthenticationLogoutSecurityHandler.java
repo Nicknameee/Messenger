@@ -2,6 +2,7 @@ package spring.application.tree.web.configuration.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
@@ -16,7 +17,7 @@ import java.util.Map;
 @Component
 public class AuthenticationLogoutSecurityHandler implements LogoutSuccessHandler {
     @Override
-    public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
+    public void onLogoutSuccess(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, Authentication authentication) throws IOException {
         ObjectMapper jacksonMapper = new ObjectMapper();
         Map<String, Object> responseBodyMap = new HashMap<>();
         responseBodyMap.put("logout", true);

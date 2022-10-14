@@ -2,6 +2,7 @@ package spring.application.tree.web.configuration.filters;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.GenericFilterBean;
@@ -18,7 +19,7 @@ import java.util.Map;
 
 public class PreLogoutFilter extends GenericFilterBean {
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+    public void doFilter(@NonNull ServletRequest servletRequest, @NonNull ServletResponse servletResponse, @NonNull FilterChain filterChain) throws IOException, ServletException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         if (authentication == null && request.getRequestURI().equals("/logout")) {
