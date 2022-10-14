@@ -19,7 +19,7 @@ import java.util.function.Function;
 
 @Component
 @PropertySource("classpath:token.properties")
-@Profile(value = "token")
+@Profile(value = {"token", "boots_token"})
 public class AuthorizationTokenUtility {
     /**
      * Username -> Token

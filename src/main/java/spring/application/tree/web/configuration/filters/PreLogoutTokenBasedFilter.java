@@ -22,7 +22,7 @@ import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
-@Profile(value = "token")
+@Profile(value = {"token", "boots_token"})
 public class PreLogoutTokenBasedFilter extends GenericFilterBean {
     private final UserDetailsImplementationService userDetailsImplementationService;
     private final AuthorizationTokenUtility authorizationTokenUtility;

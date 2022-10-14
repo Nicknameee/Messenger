@@ -71,16 +71,15 @@ public class UtilityController {
 
     @PostMapping("/restoring/password")
     public ResponseEntity<Object> restoreUserPassword(@RequestParam("email")    String email,
-                                                      @RequestParam("password") String password) {
-        Runnable postponeSuccessTask = () -> {
-            try {
-                userService.updateUserPassword(email, password);
-            } catch (InvalidAttributesException e) {
-                log.error(e.getMessage(), e);
-                log.error(String.format("Could not update password for user: %s", email));
-            }
-        };
-        TaskUtility.putSuccessConfirmationTask(email, postponeSuccessTask);
+                                                      @RequestParam("password") String password) throws ApplicationException {
+        userService.restoreUserPassword(email, password);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/restoring/email")
+    public ResponseEntity<Object> restoreUserEmail(@RequestParam("email")    String email,
+                                                   @RequestParam("username") String username) throws ApplicationException {
+        userService.restoreUserEmail(email, username);
         return ResponseEntity.ok().build();
     }
 }

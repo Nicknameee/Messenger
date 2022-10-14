@@ -23,7 +23,7 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-@Profile(value = "token")
+@Profile(value = {"token", "boots_token"})
 public class AuthenticationLogoutTokenBasedSecurityHandler implements LogoutSuccessHandler {
     private final UserDetailsImplementationService userDetailsImplementationService;
     private final AuthorizationTokenUtility authorizationTokenUtility;

@@ -21,7 +21,7 @@ import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
-@Profile(value = "token")
+@Profile(value = {"token", "boots_token"})
 public class AuthorizationTokenRequestFilter extends OncePerRequestFilter {
     private final UserDetailsImplementationService userDetailsImplementationService;
     private final AuthorizationTokenUtility authorizationTokenUtility;

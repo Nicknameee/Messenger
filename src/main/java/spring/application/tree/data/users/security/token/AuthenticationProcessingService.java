@@ -22,7 +22,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Profile(value = "token")
+@Profile(value = {"token", "boots_token"})
 public class AuthenticationProcessingService {
     private final AuthenticationManager authenticationManager;
     private final UserDetailsImplementationService userDetailsService;

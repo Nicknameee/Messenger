@@ -11,7 +11,7 @@ import spring.application.tree.data.users.security.token.AuthenticationProcessin
 
 @RestController
 @RequiredArgsConstructor
-@Profile(value = "token")
+@Profile(value = {"token", "boots_token"})
 public class AuthenticationController {
     private final AuthenticationProcessingService authenticationProcessingService;
 

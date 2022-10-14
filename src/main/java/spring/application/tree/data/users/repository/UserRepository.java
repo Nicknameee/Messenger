@@ -30,6 +30,10 @@ public interface UserRepository extends JpaRepository<AbstractUserModel, Integer
     void updateUserPassword(@Param("login") String login, @Param("password") String password);
     @Modifying
     @Transactional
+    @Query("UPDATE AbstractUserModel u SET u.email = :email WHERE u.username = :username")
+    void updateUserEmail(@Param("email") String email, @Param("username") String username);
+    @Modifying
+    @Transactional
     @Query("UPDATE AbstractUserModel u SET u.status = 'ENABLED' WHERE u.email = :email")
     void enableUser(@Param("email") String email);
     @Modifying

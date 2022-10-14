@@ -212,11 +212,20 @@ public class UserDataAccessObject {
 
     public void updateUserPassword(String login, String newPassword) throws InvalidAttributesException {
         if (login == null || login.isEmpty() || newPassword == null || newPassword.isEmpty()) {
-            throw new InvalidAttributesException(String.format("Username: %s or email is invalid: %s", login, newPassword),
+            throw new InvalidAttributesException(String.format("Login: %s or password is invalid: %s", login, newPassword),
                                                  Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
         userRepository.updateUserPassword(login, newPassword);
+    }
+
+    public void updateUserEmail(String email, String username) throws InvalidAttributesException {
+        if (email == null || email.isEmpty() || username == null || username.isEmpty()) {
+            throw new InvalidAttributesException(String.format("Email: %s or username is invalid: %s", email, username),
+                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
+        userRepository.updateUserEmail(email, username);
     }
 
     public void enableUser(String email) throws InvalidAttributesException {

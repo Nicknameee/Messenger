@@ -98,8 +98,46 @@ public class UserService {
         userDataAccessObject.updateUser(oldUser);
     }
 
-    public void updateUserPassword(String login, String newPassword) throws InvalidAttributesException {
-        userDataAccessObject.updateUserPassword(login, DataEncoderTool.encodeData(newPassword));
+    public void restoreUserPassword(String email, String newPassword) throws ApplicationException {
+        if (checkEmailAvailability(email)) {
+            throw new DataNotFoundException(String.format("No account signed to email was found: %s", email),
+                                            Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                            LocalDateTime.now(), HttpStatus.NOT_FOUND);
+        }
+        Runnable postponeSuccessTask = () -> {
+            try {
+                updateUserPassword(email, newPassword);
+            } catch (ApplicationException e) {
+                log.error(e.getMessage(), e);
+                log.error(String.format("Could not update password for user: %s", email));
+            }
+        };
+        TaskUtility.putSuccessConfirmationTask(email, postponeSuccessTask);
+    }
+
+    public void restoreUserEmail(String email, String username) throws ApplicationException {
+        if (!checkEmailAvailability(email) || checkUsernameAvailability(username)) {
+            throw new NotAllowedException(String.format("Email: %s is taken or no signed to username account was found: %s", email, username),
+                                          Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                          LocalDateTime.now(), HttpStatus.NOT_FOUND);
+        }
+        Runnable postponeSuccessTask = () -> {
+            try {
+                updateUserEmail(email, username);
+            } catch (ApplicationException e) {
+                log.error(e.getMessage(), e);
+                log.error(String.format("Could not update email for user: %s", username));
+            }
+        };
+        TaskUtility.putSuccessConfirmationTask(email, postponeSuccessTask);
+    }
+
+    public void updateUserPassword(String email, String newPassword) throws ApplicationException {
+        userDataAccessObject.updateUserPassword(email, DataEncoderTool.encodeData(newPassword));
+    }
+
+    public void updateUserEmail(String email, String username) throws ApplicationException {
+        userDataAccessObject.updateUserEmail(email, username);
     }
 
     private boolean checkUserCredentialsAvailable(String email, String username) throws InvalidAttributesException {
@@ -140,7 +178,7 @@ public class UserService {
     public void addUserToChat(int userId, int chatId) throws InvalidAttributesException, NotAllowedException {
         Integer currentUserId = getIdOfCurrentlyAuthenticatedUser();
         if (currentUserId == null || !chatService.getChatIdsOwnedByUser(currentUserId).contains(chatId)) {
-            throw new NotAllowedException(String.format("Member adding declined, only author of chat able to do that", chatId),
+            throw new NotAllowedException(String.format("Member adding declined, only author of chat able to do that, chat ID: %s", chatId),
                                           Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                           LocalDateTime.now(), HttpStatus.FORBIDDEN);
         }
@@ -151,7 +189,7 @@ public class UserService {
     public void removerUserFromChat(int userId, int chatId) throws InvalidAttributesException, NotAllowedException {
         Integer currentUserId = getIdOfCurrentlyAuthenticatedUser();
         if (currentUserId == null || !chatService.getChatIdsOwnedByUser(currentUserId).contains(chatId)) {
-            throw new NotAllowedException(String.format("Member removing declined, only author of chat able to do that", chatId),
+            throw new NotAllowedException(String.format("Member removing declined, only author of chat able to do that, chat ID: %s", chatId),
                                           Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                           LocalDateTime.now(), HttpStatus.FORBIDDEN);
         }
