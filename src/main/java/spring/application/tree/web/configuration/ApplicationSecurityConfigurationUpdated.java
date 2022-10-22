@@ -60,6 +60,7 @@ public class ApplicationSecurityConfigurationUpdated {
                 .addFilterBefore(new PreLogoutFilter(), LogoutFilter.class);
         http
                 .authorizeRequests()
+                .antMatchers("/stomp/**").permitAll()
                 .antMatchers("/api/user/account/create").permitAll()
                 .antMatchers("/api/utility/**").permitAll()
                 .antMatchers(HttpMethod.POST, "/login", "/logout").permitAll()

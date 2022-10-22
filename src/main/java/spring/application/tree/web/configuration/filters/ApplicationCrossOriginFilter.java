@@ -20,7 +20,12 @@ public class ApplicationCrossOriginFilter implements Filter {
     @Override
     public void doFilter(@NonNull ServletRequest req, @NonNull ServletResponse res, @NonNull FilterChain chain) throws IOException, ServletException {
         final HttpServletResponse response = (HttpServletResponse) res;
-        response.setHeader("Access-Control-Allow-Origin", "*");
+        String origin = "*";
+        if (((HttpServletRequest) req).getRequestURI().startsWith("/stomp")) {
+            origin = ((HttpServletRequest) req).getHeader("Origin");
+            response.setHeader("Access-Control-Allow-Credentials", "true");
+        }
+        response.setHeader("Access-Control-Allow-Origin", origin);
         response.setHeader("Access-Control-Allow-Methods", "POST, PUT, GET, OPTIONS, DELETE");
         response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
         response.setHeader("Access-Control-Max-Age", "3600");

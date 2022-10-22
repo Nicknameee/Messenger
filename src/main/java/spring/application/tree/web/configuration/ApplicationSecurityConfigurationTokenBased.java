@@ -55,6 +55,7 @@ public class ApplicationSecurityConfigurationTokenBased extends WebSecurityConfi
                 .addFilterBefore(preLogoutTokenBasedFilter, LogoutFilter.class);
         http
                 .authorizeRequests()
+                .antMatchers("/stomp/**").permitAll()
                 .antMatchers(HttpMethod.POST, "/api/user/account/create").permitAll()
                 .antMatchers("/api/utility/**").permitAll()
                 .antMatchers(HttpMethod.POST, "/login", "/logout").permitAll()

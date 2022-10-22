@@ -3,5 +3,6 @@ CREATE TABLE IF NOT EXISTS messages(
    message VARCHAR NOT NULL,
    sent_at TIMESTAMPTZ NOT NULL,
    author_id INT8 REFERENCES users(id),
-   chat_id INT8 REFERENCES chats(id)
+   chat_id INT8 REFERENCES chats(id),
+   type VARCHAR NOT NULL
 );

@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import spring.application.tree.data.messages.attributes.MessageType;
 import spring.application.tree.data.users.models.AbstractUserModel;
 import spring.application.tree.data.users.service.UserService;
 
@@ -24,9 +25,13 @@ public class AbstractMessageModel {
     private Date sendingDate;
     private int authorId;
     private int chatId;
+    private MessageType messageType = MessageType.CREATED;
 
     @JsonGetter("sendingDate")
     public OffsetDateTime getSendingDate() {
+        if (sendingDate == null) {
+            return OffsetDateTime.now();
+        }
         AbstractUserModel abstractUserModel = UserService.getCurrentlyAuthenticatedUser();
         if (abstractUserModel != null) {
             return OffsetDateTime.ofInstant(sendingDate.toInstant(), ZoneId.of(abstractUserModel.getTimezone()));

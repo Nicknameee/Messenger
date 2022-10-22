@@ -1,10 +1,10 @@
 package spring.application.tree.web.controllers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import spring.application.tree.data.chats.models.AbstractChatModel;
@@ -18,6 +18,7 @@ import spring.application.tree.data.users.models.AbstractUserModel;
 import spring.application.tree.data.users.service.UserService;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,9 +99,30 @@ public class UserController {
     }
 
     @PreAuthorize("hasAuthority('permission:user:create')")
+    @PostMapping("/message/schedule")
+    public ResponseEntity<Object> scheduleMessage(@RequestBody AbstractMessageModel abstractMessageModel,
+                                                  @DateTimeFormat(pattern = "HH:mm:ss dd-MM-yyyy") @RequestParam("fire_at") Date fireDate,
+                                                  @RequestParam("timezone") String timezone) throws InvalidAttributesException, NotAllowedException {
+        messageService.scheduleMessage(abstractMessageModel, fireDate, timezone);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasAuthority('permission:user:create')")
+    @PostMapping("/message/schedule/cancel")
+    public ResponseEntity<Object> cancelScheduledMessage(@RequestParam("message_id") int messageId) throws InvalidAttributesException {
+        messageService.cancelScheduledMessage(messageId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasAuthority('permission:user:create')")
+    @PostMapping("/message/send")
+    public ResponseEntity<Object> sendMessage(@RequestBody AbstractMessageModel abstractMessageModel) throws JsonProcessingException, NotAllowedException, InvalidAttributesException {
+        messageService.sendMessage(abstractMessageModel);
+        return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasAuthority('permission:user:create')")
     @PostMapping("/message/create")
-    @MessageMapping("/message/create")
-    @SendTo("/topic/chat")
     public ResponseEntity<Object> createMessage(@RequestBody AbstractMessageModel abstractMessageModel) throws InvalidAttributesException, NotAllowedException {
         int messageId = messageService.addMessage(abstractMessageModel);
         Map<String, Object> response = new HashMap<>();
@@ -110,8 +132,6 @@ public class UserController {
 
     @PreAuthorize("hasAuthority('permission:user:update')")
     @PutMapping("/message/update")
-    @MessageMapping("/message/update")
-    @SendTo("/topic/chat")
     public ResponseEntity<Object> updateMessage(@RequestBody AbstractMessageModel abstractMessageModel) throws InvalidAttributesException, NotAllowedException {
         messageService.updateMessage(abstractMessageModel);
         return ResponseEntity.ok().build();
@@ -119,8 +139,6 @@ public class UserController {
 
     @PreAuthorize("hasAuthority('permission:user:delete')")
     @DeleteMapping("/message/delete")
-    @MessageMapping("/message/delete")
-    @SendTo("/topic/chat")
     public ResponseEntity<Object> deleteMessage(@RequestBody AbstractMessageModel abstractMessageModel) throws InvalidAttributesException, NotAllowedException {
         messageService.deleteMessage(abstractMessageModel);
         return ResponseEntity.ok().build();
