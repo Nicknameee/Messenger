@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import spring.application.tree.data.chats.attributes.ChatType;
 
 import javax.persistence.*;
 
@@ -27,4 +28,7 @@ public class AbstractChatModel {
     private String password;
     @Column(name = "author_id")
     private int authorId;
+    @Column(name = "chat_type")
+    @Enumerated(EnumType.STRING)
+    private ChatType chatType;
 }

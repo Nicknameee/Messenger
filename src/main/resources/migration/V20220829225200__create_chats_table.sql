@@ -4,5 +4,6 @@ CREATE TABLE IF NOT EXISTS chats(
     description VARCHAR,
     private BOOLEAN DEFAULT FALSE,
     password VARCHAR,
-    author_id INT8 REFERENCES users(id)
+    author_id INT8 REFERENCES users(id),
+    chat_type VARCHAR NOT NULL
 )

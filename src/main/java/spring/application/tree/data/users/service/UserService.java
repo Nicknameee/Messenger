@@ -8,6 +8,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import spring.application.tree.data.chats.attributes.ChatType;
 import spring.application.tree.data.chats.service.ChatService;
 import spring.application.tree.data.exceptions.ApplicationException;
 import spring.application.tree.data.exceptions.DataNotFoundException;
@@ -165,7 +166,8 @@ public class UserService {
             for (Integer chatId : chatIds) {
                 userDataAccessObject.removeUserFromChat(userId, chatId);
                 int chatMembersCount = userDataAccessObject.countChatMembers(chatId);
-                if (chatMembersCount > 0) {
+                ChatType chatType = chatService.getChatType(chatId);
+                if (chatMembersCount > 0 && chatType == ChatType.GROUP) {
                     int memberId = userDataAccessObject.getRandomChatSimpleMemberId(chatId, userId);
                     chatService.passChatOwnerRightsToUserWithId(chatId, memberId);
                 } else {
@@ -182,11 +184,18 @@ public class UserService {
                                           Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                           LocalDateTime.now(), HttpStatus.FORBIDDEN);
         }
+        ChatType chatType = chatService.getChatType(chatId);
+        int chatMembersCount = countChatMembers(chatId);
+        if (!chatType.isUserAddingAllowed(chatMembersCount)) {
+            throw new NotAllowedException(String.format("Member adding declined, chat type restricts it, chat ID: %s, chat type: %s", chatId, chatType),
+                                          Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                          LocalDateTime.now(), HttpStatus.FORBIDDEN);
+        }
         userDataAccessObject.addUserToChat(userId, chatId);
     }
 
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public void removerUserFromChat(int userId, int chatId) throws InvalidAttributesException, NotAllowedException {
+    public void removeUserFromChat(int userId, int chatId) throws InvalidAttributesException, NotAllowedException {
         Integer currentUserId = getIdOfCurrentlyAuthenticatedUser();
         if (currentUserId == null || !chatService.getChatIdsOwnedByUser(currentUserId).contains(chatId)) {
             throw new NotAllowedException(String.format("Member removing declined, only author of chat able to do that, chat ID: %s", chatId),
@@ -194,19 +203,22 @@ public class UserService {
                                           LocalDateTime.now(), HttpStatus.FORBIDDEN);
         }
         if (currentUserId == userId) {
-            processChatsOnAuthorAccountDeletion(userId);
-        } else {
-            userDataAccessObject.removeUserFromChat(userId, chatId);
+            throw new NotAllowedException(String.format("Member removing declined, author of chat can not be removed, chat ID: %s", chatId),
+                                          Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                          LocalDateTime.now(), HttpStatus.FORBIDDEN);
         }
+        userDataAccessObject.removeUserFromChat(userId, chatId);
     }
 
     public void joinChat(int chatId, String password) throws InvalidAttributesException, NotAllowedException {
         Integer userId = getIdOfCurrentlyAuthenticatedUser();
         if (userId != null) {
             String chatPassword = chatService.getChatPassword(chatId);
-            boolean joiningAllowed = chatPassword == null || (chatPassword.equals(password));
+            ChatType chatType = chatService.getChatType(chatId);
+            int chatMembersCount = countChatMembers(chatId);
+            boolean joiningAllowed = chatPassword == null || (chatPassword.equals(password)) || chatType.isUserAddingAllowed(chatMembersCount);
             if (!joiningAllowed) {
-                throw new NotAllowedException(String.format("Joining declined, chat is secured, password does not match, chat ID: %s", chatId),
+                throw new NotAllowedException(String.format("Joining declined, password does not match or chat type does not support that action, chat ID: %s, chat type: %s", chatId, chatType),
                                               Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                               LocalDateTime.now(), HttpStatus.FORBIDDEN);
             }
@@ -244,5 +256,9 @@ public class UserService {
 
     public void deleteActivationExpiredAccountByLogin(String login) throws InvalidAttributesException {
         userDataAccessObject.deleteActivationExpiredAccountByLogin(login);
+    }
+
+    public int countChatMembers(int chatId) throws InvalidAttributesException {
+        return userDataAccessObject.countChatMembers(chatId);
     }
 }

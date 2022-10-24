@@ -118,27 +118,6 @@ public class UserDataAccessObject {
         userRepository.deleteAbstractUserModelById(id);
     }
 
-    private void validateUserModel(AbstractUserModel abstractUserModel) throws InvalidAttributesException {
-        StringBuilder exceptionText = new StringBuilder();
-        if (abstractUserModel.getUsername() == null || abstractUserModel.getUsername().isEmpty()) {
-            exceptionText.append(String.format("Username is invalid: %s ", abstractUserModel.getUsername()));
-        }
-        if (abstractUserModel.getEmail() == null || abstractUserModel.getEmail().isEmpty()) {
-            exceptionText.append(String.format("Email is invalid: %s ", abstractUserModel.getEmail()));
-        }
-        if (abstractUserModel.getPassword() == null || abstractUserModel.getPassword().isEmpty()) {
-            exceptionText.append(String.format("Password is invalid: %s ", abstractUserModel.getPassword()));
-        }
-        if (abstractUserModel.getTimezone() == null || abstractUserModel.getTimezone().isEmpty() || !ZoneId.getAvailableZoneIds().contains(abstractUserModel.getTimezone())) {
-            exceptionText.append(String.format("Timezone is invalid: %s ", abstractUserModel.getTimezone()));
-        }
-        if (!exceptionText.toString().isEmpty()) {
-            throw new InvalidAttributesException(exceptionText.toString(),
-                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
-                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
-        }
-    }
-
     public void addUserToChat(int userId, int chatId) throws InvalidAttributesException {
         if (userId <= 0 || chatId <= 0) {
             throw new InvalidAttributesException(String.format("User/Chat ID is invalid - user ID: %s, chat ID: %s", userId, chatId),
@@ -253,5 +232,26 @@ public class UserDataAccessObject {
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
         userRepository.deleteDisabledUser(login);
+    }
+
+    private void validateUserModel(AbstractUserModel abstractUserModel) throws InvalidAttributesException {
+        StringBuilder exceptionText = new StringBuilder();
+        if (abstractUserModel.getUsername() == null || abstractUserModel.getUsername().isEmpty()) {
+            exceptionText.append(String.format("Username is invalid: %s ", abstractUserModel.getUsername()));
+        }
+        if (abstractUserModel.getEmail() == null || abstractUserModel.getEmail().isEmpty()) {
+            exceptionText.append(String.format("Email is invalid: %s ", abstractUserModel.getEmail()));
+        }
+        if (abstractUserModel.getPassword() == null || abstractUserModel.getPassword().isEmpty()) {
+            exceptionText.append(String.format("Password is invalid: %s ", abstractUserModel.getPassword()));
+        }
+        if (abstractUserModel.getTimezone() == null || abstractUserModel.getTimezone().isEmpty() || !ZoneId.getAvailableZoneIds().contains(abstractUserModel.getTimezone())) {
+            exceptionText.append(String.format("Timezone is invalid: %s ", abstractUserModel.getTimezone()));
+        }
+        if (!exceptionText.toString().isEmpty()) {
+            throw new InvalidAttributesException(exceptionText.toString(),
+                    Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                    LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
     }
 }

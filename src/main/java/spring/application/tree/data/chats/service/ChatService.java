@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import spring.application.tree.data.chats.attributes.ChatType;
 import spring.application.tree.data.chats.models.AbstractChatModel;
 import spring.application.tree.data.chats.repository.ChatDataAccessObject;
 import spring.application.tree.data.exceptions.InvalidAttributesException;
@@ -82,5 +83,9 @@ public class ChatService {
 
     public String getChatPassword(int chatId) throws InvalidAttributesException {
         return chatDataAccessObject.getChatPassword(chatId);
+    }
+
+    public ChatType getChatType(int chatId) throws InvalidAttributesException {
+        return chatDataAccessObject.getChatType(chatId);
     }
 }

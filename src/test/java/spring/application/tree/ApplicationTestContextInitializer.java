@@ -11,5 +11,7 @@ public class ApplicationTestContextInitializer implements ApplicationContextInit
         System.setProperty("DB_USERNAME", "postgres");
         System.setProperty("DB_PASSWORD", "1904");
         System.setProperty("MAIL", "SOME_MAIL");
+        System.setProperty("WEBSOCKET_TIMEOUT", "5000");
+        System.setProperty("TOKEN_DURATION", "3600");
     }
 }

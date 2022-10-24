@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import spring.application.tree.data.chats.attributes.ChatType;
 import spring.application.tree.data.chats.service.ChatService;
 import spring.application.tree.data.exceptions.InvalidAttributesException;
 import spring.application.tree.data.exceptions.NotAllowedException;
@@ -17,6 +18,7 @@ import spring.application.tree.data.scheduling.service.ScheduleService;
 import spring.application.tree.data.users.service.UserService;
 import spring.application.tree.data.utility.models.PairValue;
 import spring.application.tree.web.webscoket.models.Endpoints;
+import spring.application.tree.web.webscoket.models.WebSocketEvent;
 import spring.application.tree.web.webscoket.service.WebSocketService;
 
 import java.time.LocalDateTime;
@@ -42,20 +44,14 @@ public class MessageService {
         Integer currentUserId = UserService.getIdOfCurrentlyAuthenticatedUser();
         if (currentUserId == null || !chatService.checkUserPresenceInChat(currentUserId, chatId)) {
             throw new NotAllowedException(String.format("User with ID: %s is not participating chat with ID: %s, message reading is forbidden", currentUserId, chatId),
-                    Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
-                    LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+                                          Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                          LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
         return messageDataAccessObject.getMessages(chatId);
     }
 
     public int addMessage(AbstractMessageModel abstractMessageModel) throws InvalidAttributesException, NotAllowedException {
-        int authorId = abstractMessageModel.getAuthorId();
-        int chatId = abstractMessageModel.getChatId();
-        if (!chatService.checkUserPresenceInChat(authorId, chatId)) {
-            throw new NotAllowedException(String.format("User with ID: %s is not participating chat with ID: %s, message sending is forbidden", authorId, chatId),
-                                          Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
-                                          LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
-        }
+        checkSendingMessageAvailability(abstractMessageModel);
         return messageDataAccessObject.addMessage(abstractMessageModel);
     }
 
@@ -85,14 +81,13 @@ public class MessageService {
         messageDataAccessObject.deleteMessage(abstractMessageModel.getId());
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
     public void scheduleMessage(AbstractMessageModel abstractMessageModel, Date fireDate, String timezone) throws InvalidAttributesException, NotAllowedException {
         abstractMessageModel.setMessageType(MessageType.SCHEDULED);
-        validateMessageModel(abstractMessageModel);
         Date now = new Date();
         Date fireDateAtServerTimezone = new Date(fireDate.getTime() - TimeZone.getTimeZone(timezone).getRawOffset() + TimeZone.getDefault().getRawOffset());
         if (now.after(fireDateAtServerTimezone)) {
-            throw new InvalidAttributesException(String.format("Invalid date, now is: %s, fire date: %s", now, fireDate),
+            throw new InvalidAttributesException(String.format("Invalid fire date, now is: %s, fire date: %s", now, fireDate),
                                                  Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
@@ -100,7 +95,7 @@ public class MessageService {
         abstractMessageModel.setId(messageId);
         Runnable task = () -> {
             try {
-                sendMessage(abstractMessageModel);
+                sendMessage(abstractMessageModel, WebSocketEvent.SENDING_MESSAGE);
                 List<PairValue<Integer, ScheduledFuture<?>>> scheduledMessages = scheduleMessageTasks.get(abstractMessageModel.getAuthorId());
                 scheduledMessages.removeIf(scheduledMessage -> scheduledMessage.getKey() == messageId);
             } catch (JsonProcessingException | NotAllowedException | InvalidAttributesException e) {
@@ -126,11 +121,13 @@ public class MessageService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public void sendMessage(AbstractMessageModel abstractMessageModel) throws JsonProcessingException, NotAllowedException, InvalidAttributesException {
+    public void sendMessage(AbstractMessageModel abstractMessageModel, WebSocketEvent event) throws JsonProcessingException, NotAllowedException, InvalidAttributesException {
         abstractMessageModel.setMessageType(MessageType.SENT);
+        validateMessageModel(abstractMessageModel);
+        checkSendingMessageAvailability(abstractMessageModel);
         String destination = String.format("%s/%s", Endpoints.CHAT.getEndpointPrefix(), abstractMessageModel.getChatId());
         updateMessageType(abstractMessageModel);
-        webSocketService.sendMessage(abstractMessageModel, destination);
+        webSocketService.sendMessage(abstractMessageModel, destination, event);
     }
 
     private void validateMessageModel(AbstractMessageModel abstractMessageModel) throws InvalidAttributesException {
@@ -151,6 +148,27 @@ public class MessageService {
             throw new InvalidAttributesException(exceptionText.toString(),
                                                  Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
+    }
+
+    private void checkSendingMessageAvailability(AbstractMessageModel abstractMessageModel) throws NotAllowedException, InvalidAttributesException {
+        int authorId = abstractMessageModel.getAuthorId();
+        int chatId = abstractMessageModel.getChatId();
+        ChatType chatType = chatService.getChatType(chatId);
+        Integer userId = UserService.getIdOfCurrentlyAuthenticatedUser();
+        if (!chatService.checkUserPresenceInChat(authorId, chatId)) {
+            throw new NotAllowedException(String.format("User with ID: %s is not participating chat with ID: %s, message sending is forbidden", authorId, chatId),
+                                          Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                          LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
+        switch (chatType) {
+            case CHANNEL: {
+                if (userId == null || userId != authorId) {
+                    throw new NotAllowedException(String.format("User with ID: %s does not owes chat with ID: %s and type: %s, message sending is forbidden", authorId, chatId, chatType),
+                                                  Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+                }
+            }
         }
     }
 }

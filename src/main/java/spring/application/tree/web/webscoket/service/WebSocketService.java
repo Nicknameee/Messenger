@@ -1,27 +1,38 @@
 package spring.application.tree.web.webscoket.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import spring.application.tree.web.webscoket.models.WebSocketEvent;
+import spring.application.tree.web.webscoket.models.WebSocketMessage;
 
-import java.util.concurrent.TimeUnit;
+import javax.annotation.PostConstruct;
 
 @Service
 @RequiredArgsConstructor
+@PropertySource("classpath:websocket.properties")
 public class WebSocketService {
-    private final long timeout = TimeUnit.SECONDS.toMillis(10);
+    @Value("${websocket.timeout}")
+    private String timeout;
     private final SimpMessagingTemplate messagingTemplate;
+    @PostConstruct
+    private void setup() {
+        messagingTemplate.setSendTimeout(Long.parseLong(timeout));
+    }
 
-    public void sendMessage(String message, String destination) {
-        messagingTemplate.setSendTimeout(timeout);
+    private void sendMessage(String message, String destination) {
         messagingTemplate.convertAndSend(destination, message);
     }
 
-    public void sendMessage(Object payload, String destination) throws JsonProcessingException {
+    public void sendMessage(Object payload, String destination, WebSocketEvent event) throws JsonProcessingException {
+        if (!(payload instanceof WebSocketMessage)) {
+            payload = new WebSocketMessage(payload, event);
+        }
         ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
         sendMessage(mapper.writeValueAsString(payload), destination);
     }

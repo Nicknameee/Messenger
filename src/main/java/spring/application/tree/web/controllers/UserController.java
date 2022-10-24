@@ -16,6 +16,7 @@ import spring.application.tree.data.messages.models.AbstractMessageModel;
 import spring.application.tree.data.messages.service.MessageService;
 import spring.application.tree.data.users.models.AbstractUserModel;
 import spring.application.tree.data.users.service.UserService;
+import spring.application.tree.web.webscoket.models.WebSocketEvent;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
@@ -117,7 +118,7 @@ public class UserController {
     @PreAuthorize("hasAuthority('permission:user:create')")
     @PostMapping("/message/send")
     public ResponseEntity<Object> sendMessage(@RequestBody AbstractMessageModel abstractMessageModel) throws JsonProcessingException, NotAllowedException, InvalidAttributesException {
-        messageService.sendMessage(abstractMessageModel);
+        messageService.sendMessage(abstractMessageModel, WebSocketEvent.SENDING_MESSAGE);
         return ResponseEntity.ok().build();
     }
 
@@ -153,7 +154,7 @@ public class UserController {
     }
 
     @PreAuthorize("hasAuthority('permission:user:read')")
-    @PutMapping("/chat/exit")
+    @DeleteMapping("/chat/exit")
     public ResponseEntity<Object> exitChat(@RequestParam("chat_id") int chatId) throws InvalidAttributesException, NotAllowedException {
         userService.exitChat(chatId);
         return ResponseEntity.ok().build();
@@ -168,10 +169,10 @@ public class UserController {
     }
 
     @PreAuthorize("hasAuthority('permission:user:update')")
-    @PutMapping("/chat/member/remove")
+    @DeleteMapping("/chat/member/remove")
     public ResponseEntity<Object> removeUserFromChat(@RequestParam("user_id") int userId,
                                                      @RequestParam("chat_id") int chatId) throws InvalidAttributesException, NotAllowedException {
-        userService.removerUserFromChat(userId, chatId);
+        userService.removeUserFromChat(userId, chatId);
         return ResponseEntity.ok().build();
     }
 }

@@ -50,7 +50,8 @@ public class AuthorizationTokenRequestFilter extends OncePerRequestFilter {
                 logger.error(e.getMessage());
             }
         } else {
-            if (!request.getRequestURI().equals("/login") && !request.getRequestURI().startsWith("/api/utility")) {
+            if (!request.getRequestURI().equals("/login") && !request.getRequestURI().startsWith("/api/utility")
+                && !request.getRequestURI().startsWith("/stomp") && !request.getRequestURI().equals("/api/user/account/create")) {
                 logger.warn("Authorization header value does not begin with Bearer, incorrect token type");
             }
         }
