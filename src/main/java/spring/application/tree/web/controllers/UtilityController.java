@@ -13,6 +13,7 @@ import spring.application.tree.data.utility.mailing.models.AbstractMailMessageMo
 import spring.application.tree.data.utility.mailing.service.MailActionsUtility;
 import spring.application.tree.data.utility.tasks.TaskUtility;
 
+import javax.servlet.http.HttpServletRequest;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -57,8 +58,9 @@ public class UtilityController {
     }
 
     @PostMapping("/mail/send")
-    public ResponseEntity<Object> createMessageSendingTask(@RequestBody AbstractMailMessageModel abstractMailMessageModel) throws ApplicationException, ParseException {
-        mailActionsUtility.sendMessage(abstractMailMessageModel);
+    public ResponseEntity<Object> createMessageSendingTask(@RequestBody AbstractMailMessageModel abstractMailMessageModel,
+                                                           HttpServletRequest httpServletRequest) throws ApplicationException, ParseException {
+        mailActionsUtility.sendMessage(abstractMailMessageModel, httpServletRequest);
         return ResponseEntity.ok().build();
     }
 
@@ -71,15 +73,17 @@ public class UtilityController {
 
     @PostMapping("/restoring/password")
     public ResponseEntity<Object> restoreUserPassword(@RequestParam("email")    String email,
-                                                      @RequestParam("password") String password) throws ApplicationException {
-        userService.restoreUserPassword(email, password);
+                                                      @RequestParam("password") String password,
+                                                      HttpServletRequest httpServletRequest) throws ApplicationException {
+        userService.restoreUserPassword(email, password, httpServletRequest);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/restoring/email")
     public ResponseEntity<Object> restoreUserEmail(@RequestParam("email")    String email,
-                                                   @RequestParam("username") String username) throws ApplicationException {
-        userService.restoreUserEmail(email, username);
+                                                   @RequestParam("username") String username,
+                                                   HttpServletRequest httpServletRequest) throws ApplicationException {
+        userService.restoreUserEmail(email, username, httpServletRequest);
         return ResponseEntity.ok().build();
     }
 }

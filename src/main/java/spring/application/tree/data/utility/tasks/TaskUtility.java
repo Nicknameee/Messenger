@@ -9,7 +9,7 @@ import spring.application.tree.data.exceptions.ConfirmationException;
 import spring.application.tree.data.exceptions.InvalidAttributesException;
 import spring.application.tree.data.scheduling.service.ScheduleService;
 import spring.application.tree.data.utility.mailing.models.ActionType;
-import spring.application.tree.data.utility.models.PairValue;
+import spring.application.tree.data.utility.models.TrioValue;
 import spring.application.tree.data.utility.properties.CustomPropertyDataLoader;
 import spring.application.tree.data.utility.properties.CustomPropertySourceConverter;
 import spring.application.tree.data.utility.tasks.task.SystemTask;
@@ -26,9 +26,9 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class TaskUtility {
     /**
-     * Key - user email, value - expire time and task for execution
+     * Key - user email, value - expire time, origin server URI and task for execution
      */
-    private static final Map<String, PairValue<LocalDateTime, SystemTask<String>>> onSuccessConfirmationTask = new ConcurrentHashMap<>();
+    private static final Map<String, TrioValue<LocalDateTime, String, SystemTask<String>>> onSuccessConfirmationTask = new ConcurrentHashMap<>();
     /**
      * Key - property name, value - property value
      */
@@ -39,7 +39,7 @@ public class TaskUtility {
     private void initializeTasks() throws InvalidAttributesException {
         properties = CustomPropertySourceConverter.convertToKeyValueFormat(CustomPropertyDataLoader.getResourceContent("classpath:mail.properties"));
         Runnable clearingTask = () -> {
-            for (Map.Entry<String, PairValue<LocalDateTime, SystemTask<String>>> entry : onSuccessConfirmationTask.entrySet()) {
+            for (Map.Entry<String, TrioValue<LocalDateTime, String, SystemTask<String>>> entry : onSuccessConfirmationTask.entrySet()) {
                 if (entry.getValue().getKey().isBefore(LocalDateTime.now())) {
                     onSuccessConfirmationTask.remove(entry.getKey());
                 }
@@ -49,12 +49,12 @@ public class TaskUtility {
         scheduleService.schedulePeriodicTaskWithoutConsideringTaskDuration(clearingTask, 0, 15, TimeUnit.MINUTES);
     }
 
-    public static void putSuccessConfirmationTask(String ID, Runnable task) {
+    public static void putSuccessConfirmationTask(String ID, String origin, Runnable task) {
         int delay = 3600;
         if (properties.containsKey("duration")) {
             delay = Integer.parseInt(properties.get("duration"));
         }
-        onSuccessConfirmationTask.put(ID, new PairValue<>(LocalDateTime.now().plusSeconds(delay), new SystemTask<>(ID, task)));
+        onSuccessConfirmationTask.put(ID, new TrioValue<>(LocalDateTime.now().plusSeconds(delay), origin, new SystemTask<>(ID, task)));
     }
 
     public static void removeSuccessConfirmationTask(String ID) {
@@ -67,9 +67,10 @@ public class TaskUtility {
         if (isVerified) {
             synchronized (onSuccessConfirmationTask) {
                 if (onSuccessConfirmationTask.containsKey(email)) {
-                    onSuccessConfirmationTask.get(email).getValue().run();
+                    onSuccessConfirmationTask.get(email).getData().run();
+                    String origin = onSuccessConfirmationTask.get(email).getValue();
                     onSuccessConfirmationTask.remove(email);
-                    return ResponseEntity.status(HttpStatus.FOUND).location(URI.create("http://localhost:9000")).build();
+                    return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(origin)).build();
                 }
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }

@@ -35,8 +35,9 @@ public class UserController {
 
     @PreAuthorize("!hasAnyAuthority('permission:user:create')")
     @PostMapping("/account/create")
-    public ResponseEntity<Object> createUser(@RequestBody AbstractUserModel abstractUserModel) throws ApplicationException {
-        userService.saveUser(abstractUserModel);
+    public ResponseEntity<Object> createUser(@RequestBody AbstractUserModel abstractUserModel,
+                                             HttpServletRequest httpServletRequest) throws ApplicationException {
+        userService.saveUser(abstractUserModel, httpServletRequest);
         return ResponseEntity.ok().build();
     }
 

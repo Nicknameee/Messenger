@@ -18,6 +18,7 @@ import spring.application.tree.data.utility.tasks.ActionHistoryStorage;
 import spring.application.tree.data.utility.tasks.TaskFactory;
 
 import javax.annotation.PostConstruct;
+import javax.servlet.http.HttpServletRequest;
 import java.text.ParseException;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -43,16 +44,16 @@ public class MailActionsUtility {
         properties = CustomPropertySourceConverter.convertToKeyValueFormat(CustomPropertyDataLoader.getResourceContent("classpath:mail.properties"));
     }
 
-    public void sendMessage(AbstractMailMessageModel abstractMailMessageModel) throws ApplicationException, ParseException {
+    public void sendMessage(AbstractMailMessageModel abstractMailMessageModel, HttpServletRequest httpServletRequest) throws ApplicationException, ParseException {
         if (ActionType.isConfirmationAction(abstractMailMessageModel.getActionType())) {
-            sendConfirmationEmailMessage(abstractMailMessageModel);
+            sendConfirmationEmailMessage(abstractMailMessageModel, httpServletRequest);
         } else if (ActionType.isSimpleAction(abstractMailMessageModel.getActionType())) {
             mailService.sendMessage(abstractMailMessageModel).run();
         }
     }
 
-    private void sendConfirmationEmailMessage(AbstractMailMessageModel abstractMailMessageModel) throws ApplicationException, ParseException {
-        AbstractMailMessageModel processedMailMessage = processConfirmationMailMessageModelForSending(abstractMailMessageModel);
+    private void sendConfirmationEmailMessage(AbstractMailMessageModel abstractMailMessageModel, HttpServletRequest httpServletRequest) throws ApplicationException, ParseException {
+        AbstractMailMessageModel processedMailMessage = processConfirmationMailMessageModelForSending(abstractMailMessageModel, httpServletRequest);
         Runnable mailTask = mailService.sendMessage(processedMailMessage);
         Runnable confirmationTask = () -> {
             mailTask.run();
@@ -66,16 +67,18 @@ public class MailActionsUtility {
         return Generators.timeBasedGenerator().generate().toString();
     }
 
-    private AbstractMailMessageModel processConfirmationMailMessageModelForSending(AbstractMailMessageModel abstractMailMessageModel) throws InvalidAttributesException, ParseException {
-        String subject;
+    private AbstractMailMessageModel processConfirmationMailMessageModelForSending(AbstractMailMessageModel abstractMailMessageModel, HttpServletRequest httpServletRequest) throws InvalidAttributesException, ParseException {
+        String subject = "Confirmation message";
         String text;
         String uniqueCode = generateUniqueCode();
-        String serverURI = String.format("%s://%s:%s", properties.get("protocol"), properties.get("host"), properties.get("port"));
         String recipient = abstractMailMessageModel.getRecipient();
         String action = abstractMailMessageModel.getActionType().getDescription();
         Date expireDate = new DateTime().plusSeconds(Integer.parseInt(properties.get("duration"))).toDate();
         ZonedDateTime convertedDate = dateConvertingUtility.convertDate(TimeZone.getTimeZone(abstractMailMessageModel.getClientTimezone()), expireDate);
-        subject = "Confirmation message";
+        String scheme = httpServletRequest.getScheme();
+        String server = httpServletRequest.getServerName();
+        String port = String.valueOf(httpServletRequest.getServerPort());
+        String serverURI = String.format("%s://%s:%s", scheme, server, port);
         if (abstractMailMessageModel.getMailType() == MailType.HTML) {
             text = String.format("<p style=\"font-size: 1.33em;\">You are trying <span style=\"font-weight: bold; font-size: 1.33em;\">%s</span></p>",
                     abstractMailMessageModel.getActionType().getProcessDescription().toUpperCase(Locale.ROOT));

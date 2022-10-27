@@ -70,7 +70,7 @@ public class UserService {
         return userDataAccessObject.checkEmailAvailability(email);
     }
 
-    public void saveUser(AbstractUserModel abstractUserModel) throws ApplicationException {
+    public void saveUser(AbstractUserModel abstractUserModel, HttpServletRequest httpServletRequest) throws ApplicationException {
         if (!checkUserCredentialsAvailable(abstractUserModel.getEmail(), abstractUserModel.getUsername())) {
             throw new NotAllowedException(String.format("Credentials are taken, email: %s, username: %s", abstractUserModel.getEmail(), abstractUserModel.getUsername()),
                                           Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
@@ -84,7 +84,8 @@ public class UserService {
                 log.error(String.format("Could not enable user: %s", abstractUserModel.getEmail()));
             }
         };
-        TaskUtility.putSuccessConfirmationTask(abstractUserModel.getEmail(), postponeSuccessTask);
+        String origin = extractSourceURI(httpServletRequest);
+        TaskUtility.putSuccessConfirmationTask(abstractUserModel.getEmail(), origin, postponeSuccessTask);
         userDataAccessObject.saveUser(abstractUserModel);
     }
 
@@ -99,7 +100,7 @@ public class UserService {
         userDataAccessObject.updateUser(oldUser);
     }
 
-    public void restoreUserPassword(String email, String newPassword) throws ApplicationException {
+    public void restoreUserPassword(String email, String newPassword, HttpServletRequest httpServletRequest) throws ApplicationException {
         if (checkEmailAvailability(email)) {
             throw new DataNotFoundException(String.format("No account signed to email was found: %s", email),
                                             Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
@@ -113,10 +114,11 @@ public class UserService {
                 log.error(String.format("Could not update password for user: %s", email));
             }
         };
-        TaskUtility.putSuccessConfirmationTask(email, postponeSuccessTask);
+        String origin = extractSourceURI(httpServletRequest);
+        TaskUtility.putSuccessConfirmationTask(email, origin, postponeSuccessTask);
     }
 
-    public void restoreUserEmail(String email, String username) throws ApplicationException {
+    public void restoreUserEmail(String email, String username, HttpServletRequest httpServletRequest) throws ApplicationException {
         if (!checkEmailAvailability(email) || checkUsernameAvailability(username)) {
             throw new NotAllowedException(String.format("Email: %s is taken or no signed to username account was found: %s", email, username),
                                           Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
@@ -130,7 +132,8 @@ public class UserService {
                 log.error(String.format("Could not update email for user: %s", username));
             }
         };
-        TaskUtility.putSuccessConfirmationTask(email, postponeSuccessTask);
+        String origin = extractSourceURI(httpServletRequest);
+        TaskUtility.putSuccessConfirmationTask(email, origin, postponeSuccessTask);
     }
 
     public void updateUserPassword(String email, String newPassword) throws ApplicationException {
@@ -260,5 +263,16 @@ public class UserService {
 
     public int countChatMembers(int chatId) throws InvalidAttributesException {
         return userDataAccessObject.countChatMembers(chatId);
+    }
+
+    private String extractSourceURI(HttpServletRequest httpServletRequest) {
+        String origin = httpServletRequest.getHeader("Origin");
+        if (origin == null) {
+            String scheme = httpServletRequest.getScheme();
+            String server = httpServletRequest.getServerName();
+            String port = String.valueOf(httpServletRequest.getServerPort());
+            origin = String.format("%s://%s:%s", scheme, server, port);
+        }
+        return origin;
     }
 }
