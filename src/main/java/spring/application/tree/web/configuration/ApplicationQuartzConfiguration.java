@@ -26,7 +26,7 @@ public class ApplicationQuartzConfiguration {
             Set<Class<? extends QuartzJobBean>> quartzJobClasses = reflections.getSubTypesOf(QuartzJobBean.class);
             for (Class<? extends QuartzJobBean> quartzJobClass : quartzJobClasses) {
                 try {
-                    log.info(String.format("Initializing QuartzJob %s", quartzJobClass));
+                    log.info("Initializing QuartzJob '{}'", quartzJobClass);
                     Field cronExpressionField = quartzJobClass.getDeclaredField("cronExpression");
                     cronExpressionField.setAccessible(true);
                     String cron = (String) cronExpressionField.get("");

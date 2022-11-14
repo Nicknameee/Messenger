@@ -1,5 +1,6 @@
 package spring.application.tree.data.utility.tasks;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import spring.application.tree.data.exceptions.ConfirmationException;
 import spring.application.tree.data.exceptions.InvalidAttributesException;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 
+@Slf4j
 public class ActionHistoryStorage {
     /**
      * Key - user email, value - task of confirmation email sending, expiring time
@@ -39,6 +41,7 @@ public class ActionHistoryStorage {
             }
             userToPostponedTask.remove(email);
             userToPostponedTask.put(email, new PairValue<>(task, actionType));
+            log.debug("Adding postponed task for user '{}' and action '{}'", email, actionType);
         }
     }
 
@@ -51,6 +54,7 @@ public class ActionHistoryStorage {
         synchronized (userToConfirmationTask) {
             userToConfirmationTask.remove(email);
             userToConfirmationTask.put(email, new PairValue<>(task, LocalDateTime.now().plus(expiringDelay, unit)));
+            log.debug("Adding confirmation task for user '{}'", email);
         }
     }
 
@@ -63,6 +67,7 @@ public class ActionHistoryStorage {
         synchronized (userToConfirmationCode) {
             userToConfirmationCode.remove(email);
             userToConfirmationCode.put(email, new PairValue<>(code, actionType));
+            log.debug("Adding confirmation code '{}' for user '{}' and action '{}'", code, email, actionType);
         }
     }
 
@@ -73,6 +78,7 @@ public class ActionHistoryStorage {
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
         userToConfirmationTask.remove(email);
+        log.debug("Removing confirmation task for user '{}'", email);
     }
 
     public static void removeConfirmationCode(String email) throws InvalidAttributesException {
@@ -82,6 +88,7 @@ public class ActionHistoryStorage {
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
         userToConfirmationCode.remove(email);
+        log.debug("Removing confirmation code for user '{}'", email);
     }
 
     public static ScheduledFuture<?> getConfirmationTask(String email) throws InvalidAttributesException {
@@ -114,6 +121,7 @@ public class ActionHistoryStorage {
                                                  Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
                                                  LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
         }
+        log.debug("Completing task for user '{}', using code '{}' and action '{}'", email, code, actionType);
         if (!userToConfirmationCode.containsKey(email)) {
             return false;
         }

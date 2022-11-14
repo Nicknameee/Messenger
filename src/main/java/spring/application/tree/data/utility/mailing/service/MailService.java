@@ -75,7 +75,7 @@ public class MailService {
             message.setText(abstractMailMessageModel.getText());
             message.setSentDate(new Date());
             javaMailSender.send(message);
-            log.info(String.format("Sending email to: %s", abstractMailMessageModel.getRecipient()));
+            log.info("Sending email to: '{}'", abstractMailMessageModel.getRecipient());
         };
         return task;
     }
@@ -90,7 +90,7 @@ public class MailService {
                 helper.setSubject(abstractMailMessageModel.getSubject());
                 helper.setText(abstractMailMessageModel.getText(), true);
                 javaMailSender.send(mimeMessage);
-                log.info(String.format("Sending email to: %s", abstractMailMessageModel.getRecipient()));
+                log.info("Sending email to: '{}'", abstractMailMessageModel.getRecipient());
             } catch (MessagingException e) {
                 log.error(e.getMessage(), e);
                 if (ActionType.isConfirmationAction(abstractMailMessageModel.getActionType())) {
@@ -98,8 +98,8 @@ public class MailService {
                         ActionHistoryStorage.removeConfirmationCode(abstractMailMessageModel.getRecipient());
                     } catch (InvalidAttributesException ex) {
                         log.error(ex.getMessage(), ex);
-                        log.error(String.format("Error occurs when trying to remove confirmation code on fail email sending, recipient: %s",
-                                abstractMailMessageModel.getRecipient()));
+                        log.error("Error occurs when trying to remove confirmation code on fail email sending, recipient: '{}'",
+                                abstractMailMessageModel.getRecipient());
                     }
                 }
             }

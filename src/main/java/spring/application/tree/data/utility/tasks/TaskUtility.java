@@ -39,12 +39,13 @@ public class TaskUtility {
     private void initializeTasks() throws InvalidAttributesException {
         properties = CustomPropertySourceConverter.convertToKeyValueFormat(CustomPropertyDataLoader.getResourceContent("classpath:mail.properties"));
         Runnable clearingTask = () -> {
+            log.info("Expired task removal process started");
             for (Map.Entry<String, TrioValue<LocalDateTime, String, SystemTask<String>>> entry : onSuccessConfirmationTask.entrySet()) {
                 if (entry.getValue().getKey().isBefore(LocalDateTime.now())) {
                     onSuccessConfirmationTask.remove(entry.getKey());
+                    log.debug("Confirmation task for user '{}' removed", entry.getKey());
                 }
             }
-            log.info("Expired task removal process started");
         };
         scheduleService.schedulePeriodicTaskWithoutConsideringTaskDuration(clearingTask, 0, 15, TimeUnit.MINUTES);
     }
@@ -55,24 +56,29 @@ public class TaskUtility {
             delay = Integer.parseInt(properties.get("duration"));
         }
         onSuccessConfirmationTask.put(ID, new TrioValue<>(LocalDateTime.now().plusSeconds(delay), origin, new SystemTask<>(ID, task)));
+        log.debug("Confirmation task for '{}' added", ID);
     }
 
     public static void removeSuccessConfirmationTask(String ID) {
         onSuccessConfirmationTask.remove(ID);
+        log.debug("Confirmation task for '{}' removed", ID);
     }
 
     public ResponseEntity<Object> confirmTaskExecution(String code, String email, String action) throws InvalidAttributesException, ConfirmationException {
+        log.info("Confirming task for '{}', using code '{}' for action '{}'", email, code, ActionType.fromKey(action));
         boolean isVerified = ActionHistoryStorage.markTaskAsCompleted(email, code, ActionType.fromKey(action));
-        ResponseEntity<Object> response;
+        ResponseEntity<Object> response = null;
         if (isVerified) {
-            synchronized (onSuccessConfirmationTask) {
-                if (onSuccessConfirmationTask.containsKey(email)) {
-                    onSuccessConfirmationTask.get(email).getData().run();
-                    String origin = onSuccessConfirmationTask.get(email).getValue();
-                    onSuccessConfirmationTask.remove(email);
-                    return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(origin)).build();
+            if (onSuccessConfirmationTask.containsKey(email)) {
+                synchronized (onSuccessConfirmationTask) {
+                    if (onSuccessConfirmationTask.containsKey(email)) {
+                        onSuccessConfirmationTask.get(email).getData().run();
+                        String origin = onSuccessConfirmationTask.get(email).getValue();
+                        onSuccessConfirmationTask.remove(email);
+                        return ResponseEntity.status(HttpStatus.FOUND).location(URI.create(origin)).build();
+                    }
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
                 }
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
         } else {
             response = ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).build();

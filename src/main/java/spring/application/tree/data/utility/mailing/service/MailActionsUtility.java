@@ -61,6 +61,7 @@ public class MailActionsUtility {
         };
         ScheduledFuture<?> task = scheduleService.scheduleOnceFireTask(confirmationTask, 0, TimeUnit.SECONDS);
         ActionHistoryStorage.putConfirmationTask(abstractMailMessageModel.getRecipient(), task, Integer.parseInt(properties.get("duration")), ChronoUnit.SECONDS);
+        log.debug("Sending confirmation email message '{}'", abstractMailMessageModel);
     }
 
     private String generateUniqueCode() {

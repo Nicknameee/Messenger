@@ -15,7 +15,6 @@ public class CustomPropertyDataLoader {
         } catch (IOException e) {
             return null;
         }
-
     }
 
     public static String getResourceContent(String location) {

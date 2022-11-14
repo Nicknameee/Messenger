@@ -27,7 +27,7 @@ public class TaskFactory {
                 TaskUtility.removeSuccessConfirmationTask(email);
             } catch (InvalidAttributesException e) {
                 log.error(e.getMessage(), e);
-                log.error(String.format("Unable to remove confirmation data for user expired task: %s", email));
+                log.error("Unable to remove confirmation data for user expired task: '{}'", email);
             }
         };
         return task;
@@ -51,7 +51,7 @@ public class TaskFactory {
                 TaskUtility.removeSuccessConfirmationTask(email);
             } catch (InvalidAttributesException e) {
                 log.error(e.getMessage(), e);
-                log.error(String.format("Unable to remove confirmation data for user expired task: %s", email));
+                log.error("Unable to remove confirmation data for user expired task: '{}'", email);
             }
         };
         return task;
@@ -68,6 +68,7 @@ public class TaskFactory {
     }
 
     public void callRollbackTask(String recipient, ActionType actionType, ScheduleService scheduleService, Map<String, String> properties) {
+        log.debug("Calling rollback task for user '{}' on action '{}'", recipient, actionType);
         switch (actionType) {
             case SIGN_UP:
                 callRollbackTaskForSignUpConfirmation(recipient, actionType, scheduleService, properties);
