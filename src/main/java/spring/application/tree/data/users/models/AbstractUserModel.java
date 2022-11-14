@@ -1,9 +1,6 @@
 package spring.application.tree.data.users.models;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.*;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -12,6 +9,7 @@ import spring.application.tree.data.users.attributes.Role;
 import spring.application.tree.data.users.attributes.Status;
 import spring.application.tree.data.users.security.DataEncoderTool;
 import spring.application.tree.data.users.service.UserService;
+import spring.application.tree.data.users.views.AbstractUserView;
 
 import javax.persistence.*;
 import java.time.OffsetDateTime;
@@ -27,18 +25,23 @@ import java.util.Objects;
 public class AbstractUserModel implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonView(AbstractUserView.Base.class)
     private Integer id;
     @Column(name = "username" , nullable = false , unique = true)
+    @JsonView(AbstractUserView.Base.class)
     private String username;
     @Column(name = "email" , nullable = false , unique = true)
+    @JsonView(AbstractUserView.Base.class)
     private String email;
     @Column(name = "password" , nullable = false)
     private String password;
     @Column(name = "login_time" , nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
+    @JsonView(AbstractUserView.Base.class)
     private Date loginTime = new Date();
     @Column(name = "logout_time" , nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
+    @JsonView(AbstractUserView.Base.class)
     private Date logoutTime = new Date(0);
     @Column(name = "role" , nullable = false)
     @Enumerated(EnumType.STRING)
@@ -48,8 +51,10 @@ public class AbstractUserModel implements UserDetails {
     private Status status = Status.DISABLED;
     @Column(name = "language" , nullable = false)
     @Enumerated(EnumType.STRING)
+    @JsonView(AbstractUserView.Base.class)
     private Language language = Language.ENGLISH;
     @Column(name = "timezone", nullable = false)
+    @JsonView(AbstractUserView.Base.class)
     private String timezone;
 
     @JsonSetter("password")

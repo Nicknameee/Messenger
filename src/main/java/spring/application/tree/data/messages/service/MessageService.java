@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import spring.application.tree.data.chats.attributes.ChatType;
 import spring.application.tree.data.chats.service.ChatService;
+import spring.application.tree.data.exceptions.DataNotFoundException;
 import spring.application.tree.data.exceptions.InvalidAttributesException;
 import spring.application.tree.data.exceptions.NotAllowedException;
 import spring.application.tree.data.messages.attributes.MessageType;
@@ -39,6 +40,10 @@ public class MessageService {
      * key - user ID, value - message ID and sending task
      */
     private static final Map<Integer, List<PairValue<Integer, ScheduledFuture<?>>>> scheduleMessageTasks = new HashMap<>();
+
+    public AbstractMessageModel getMessage(int id) throws InvalidAttributesException {
+        return messageDataAccessObject.getMessage(id);
+    }
 
     public List<AbstractMessageModel> getMessages(int chatId) throws InvalidAttributesException, NotAllowedException {
         Integer currentUserId = UserService.getIdOfCurrentlyAuthenticatedUser();
@@ -95,10 +100,10 @@ public class MessageService {
         abstractMessageModel.setId(messageId);
         Runnable task = () -> {
             try {
-                sendMessage(abstractMessageModel, WebSocketEvent.SENDING_MESSAGE);
+                sendMessage(messageId, WebSocketEvent.SENDING_MESSAGE);
                 List<PairValue<Integer, ScheduledFuture<?>>> scheduledMessages = scheduleMessageTasks.get(abstractMessageModel.getAuthorId());
                 scheduledMessages.removeIf(scheduledMessage -> scheduledMessage.getKey() == messageId);
-            } catch (JsonProcessingException | NotAllowedException | InvalidAttributesException e) {
+            } catch (JsonProcessingException | NotAllowedException | InvalidAttributesException | DataNotFoundException e) {
                 log.error(e.getMessage(), e);
             }
         };
@@ -121,7 +126,13 @@ public class MessageService {
     }
 
     @Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
-    public void sendMessage(AbstractMessageModel abstractMessageModel, WebSocketEvent event) throws JsonProcessingException, NotAllowedException, InvalidAttributesException {
+    public void sendMessage(int messageId, WebSocketEvent event) throws JsonProcessingException, NotAllowedException, InvalidAttributesException, DataNotFoundException {
+        AbstractMessageModel abstractMessageModel = getMessage(messageId);
+        if (abstractMessageModel == null) {
+            throw new DataNotFoundException(String.format("Message with following ID was not found: %s", messageId),
+                                            Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                            LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
         abstractMessageModel.setMessageType(MessageType.SENT);
         validateMessageModel(abstractMessageModel);
         checkSendingMessageAvailability(abstractMessageModel);

@@ -22,6 +22,27 @@ import java.util.*;
 public class MessageDataAccessObject {
     private final JdbcTemplate jdbcTemplate;
 
+
+    public AbstractMessageModel getMessage(int id) throws InvalidAttributesException {
+        if (id <= 0) {
+            throw new InvalidAttributesException(String.format("Message ID is invalid: %s", id),
+                                                 Arrays.asList(Thread.currentThread().getStackTrace()).get(1).toString(),
+                                                 LocalDateTime.now(), HttpStatus.NOT_ACCEPTABLE);
+        }
+        final String query = "SELECT message, sent_at, author_id, chat_id, type FROM messages WHERE id = ? ORDER BY sent_at DESC;";
+        return jdbcTemplate.query(query,  resultSet -> {
+            if (resultSet.next()) {
+                String message = resultSet.getString("message");
+                Date sendingDate = resultSet.getTimestamp("sent_at");
+                int authorId = resultSet.getInt("author_id");
+                int chatId = resultSet.getInt("chat_id");
+                MessageType messageType = MessageType.valueOf(resultSet.getString("type"));
+                return new AbstractMessageModel(id, message, sendingDate, authorId, chatId, messageType);
+            }
+            return null;
+        }, id);
+    }
+
     public List<AbstractMessageModel> getMessages(int chatId) throws InvalidAttributesException {
         if (chatId <= 0) {
             throw new InvalidAttributesException(String.format("Chat ID is invalid: %s", chatId),

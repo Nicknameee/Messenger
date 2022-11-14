@@ -1,5 +1,6 @@
 package spring.application.tree.web.controllers;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,12 +11,14 @@ import org.springframework.web.bind.annotation.*;
 import spring.application.tree.data.chats.models.AbstractChatModel;
 import spring.application.tree.data.chats.service.ChatService;
 import spring.application.tree.data.exceptions.ApplicationException;
+import spring.application.tree.data.exceptions.DataNotFoundException;
 import spring.application.tree.data.exceptions.InvalidAttributesException;
 import spring.application.tree.data.exceptions.NotAllowedException;
 import spring.application.tree.data.messages.models.AbstractMessageModel;
 import spring.application.tree.data.messages.service.MessageService;
 import spring.application.tree.data.users.models.AbstractUserModel;
 import spring.application.tree.data.users.service.UserService;
+import spring.application.tree.data.users.views.AbstractUserView;
 import spring.application.tree.web.webscoket.models.WebSocketEvent;
 
 import javax.servlet.http.HttpServletRequest;
@@ -32,6 +35,14 @@ public class UserController {
     private final UserService userService;
     private final ChatService chatService;
     private final MessageService messageService;
+
+    @PreAuthorize("hasAnyAuthority('permission:user:read')")
+    @GetMapping("/account/read")
+    @JsonView(AbstractUserView.Base.class)
+    public ResponseEntity<Object> readUser() {
+        AbstractUserModel user = UserService.getCurrentlyAuthenticatedUser();
+        return ResponseEntity.ok(user);
+    }
 
     @PreAuthorize("!hasAnyAuthority('permission:user:create')")
     @PostMapping("/account/create")
@@ -56,17 +67,18 @@ public class UserController {
     }
 
     @PreAuthorize("hasAuthority('permission:user:read')")
-    @GetMapping("/members")
-    public ResponseEntity<Object> getChatMembers(@RequestParam("chat_id") int chatId) throws InvalidAttributesException, NotAllowedException {
-        List<AbstractUserModel> members = userService.getChatMembers(chatId);
-        return ResponseEntity.ok(members);
-    }
-
-    @PreAuthorize("hasAuthority('permission:user:read')")
     @GetMapping("/chats")
     public ResponseEntity<Object> getChats() throws InvalidAttributesException, NotAllowedException {
         List<AbstractChatModel> chats = chatService.getChatsForCurrentUser();
         return ResponseEntity.ok(chats);
+    }
+
+    @PreAuthorize("hasAuthority('permission:user:read')")
+    @GetMapping("/members")
+    @JsonView(AbstractUserView.Base.class)
+    public ResponseEntity<Object> getChatMembers(@RequestParam("chat_id") int chatId) throws InvalidAttributesException, NotAllowedException {
+        List<AbstractUserModel> members = userService.getChatMembers(chatId);
+        return ResponseEntity.ok(members);
     }
 
     @PreAuthorize("hasAuthority('permission:user:create')")
@@ -118,8 +130,8 @@ public class UserController {
 
     @PreAuthorize("hasAuthority('permission:user:create')")
     @PostMapping("/message/send")
-    public ResponseEntity<Object> sendMessage(@RequestBody AbstractMessageModel abstractMessageModel) throws JsonProcessingException, NotAllowedException, InvalidAttributesException {
-        messageService.sendMessage(abstractMessageModel, WebSocketEvent.SENDING_MESSAGE);
+    public ResponseEntity<Object> sendMessage(@RequestParam("message_id") int messageId) throws JsonProcessingException, NotAllowedException, InvalidAttributesException, DataNotFoundException {
+        messageService.sendMessage(messageId, WebSocketEvent.SENDING_MESSAGE);
         return ResponseEntity.ok().build();
     }
 
